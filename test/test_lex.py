@@ -2,33 +2,64 @@ import unittest
 from cpy.lex import Lex
 
 class TestLex(unittest.TestCase):
-    def test_lex(self):
-        input = "int f(int a) { int b = a + 1.9f; return b * 2; }"
-        expected = [
-           ('int', 'type'), 
-           ('f', 'id'), 
-           ('(', 'op'), 
-           ('int', 'type'), 
-           ('a', 'id'), 
-           (')', 'op'), 
-           ('{', 'op'), 
-           ('int', 'type'), 
-           ('b', 'id'), 
-           ('=', 'op'), 
-           ('a', 'id'), 
-           ('+', 'op'), 
-           ('1.9', 'float_literal'), 
-           (';', 'op'), 
-           ('return', 'op'), 
-           ('b', 'id'), 
-           ('*', 'op'), 
-           ('2', 'int_literal'), 
-           (';', 'op'),
-           ('}', 'op')
-        ]
+    def assert_lex(self, *, code, exp): 
+        tokens = list(Lex(code))
+        expected_token_pairs = [tuple(s.split(" ")) for s in exp]
+        self.assertEqual(tokens, expected_token_pairs)
 
-        tokens = [t for t in Lex(input)]
-        self.assertEqual(tokens, expected)
+    def test_keywords(self): 
+        self.assert_lex(
+           code="auto break case",
+           exp=["KEYWORD auto", "KEYWORD break", "KEYWORD case"]
+        )
 
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    def test_identifiers(self): 
+        self.assert_lex(
+           code="a aa a1 aa11",
+           exp=["ID a", "ID aa", "ID a1", "ID aa11"]
+        )
+
+    def test_nums(self): 
+        self.assert_lex(
+           code="1 1.0 23 23. 45.6",
+           exp=["NUM 1", "NUM 1.0", "NUM 23", "NUM 23.", "NUM 45.6"]
+        )
+
+    def test_strings(self):
+        self.assert_lex(
+            code=r'"a" "\"" "\n"',
+            exp=[r'STR "a"', r'STR "\""', r'STR "\n"']
+        )
+
+    def test_punctuation(self): 
+        self.assert_lex(
+           code="){,;",
+           exp=["PUNCTUATION )", "PUNCTUATION {", "PUNCTUATION ,", "PUNCTUATION ;"]
+        )
+
+    def test_ops(self): 
+        self.assert_lex(
+           code="< > >= <= <<= >>= ^",
+           exp=[ "OP <", "OP >", "OP >=", "OP <=", "OP <<=", "OP >>=", "OP ^"]
+        )
+
+    def test_whitespace(self): 
+        self.assert_lex(
+           code= "    ",
+           exp=[]
+        )
+
+    def test_char(self): 
+        self.assert_lex(
+           code= "'a' 'b'",
+           exp=["CHAR 'a'", "CHAR 'b'"]
+        )
+
+    def test_comments(self): 
+        self.assert_lex(
+           code= "//comment",
+           exp=["COMMENT //comment"]
+        )
+
+if __name__ == "__main__":
+  unittest.main(verbosity=1)
