@@ -1,5 +1,6 @@
 import ast
 import graphviz
+ast.FunctionDef
 
 def print_graph(code):
     tree = ast.parse(code)
@@ -14,8 +15,11 @@ def draw_graph(code):
             dot.edge(str(id(node)), str(id(child)))
     dot.render("ast", format="png", view=True) 
 
-# code = "a = 2"
 code = """
-1 * 2 + -3
+def a(): 
+    b = 1
+    c = 1
+    d = a + c
+    return b + 2
 """
 print_graph(code)
