@@ -1,64 +1,48 @@
 from cpy.lex import Lex, Tok
 from cpy.classes import *
+from cpy.debug import *
 
-UOPS = { "++", "--", "+", "-" }
-BINOP_PRIORITY = { 
+UOPS = { "++", "--", "+", "-", "+=", "-=" }
+PREC_MAP = { 
+    "=": 1,
+    "+=": 1,
+    "-=": 1,
     "+": 1,
     "-": 1,
     "*": 2,
     "/": 2
 }
 
-class Prs: 
-    def __init__(self, code: str): 
+class Prs:
+    def peek(self): return self.l.peek()
+    def next(self): return self.l.next()
+    def curr(self): return self.l.curr()
+    def right_asc(self,op): return op.value in ["=", "+=", "-="]
+    def get_prec(self,input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
+
+    def __init__(self, code: str):
         self.l = Lex(code)
-        Tok.priority = lambda self: BINOP_PRIORITY[self.value]
-    
-    def parse(self):
-        def curr(): return self.l.curr()
-        def next(): return self.l.next()
-        def peek(): return self.l.peek()
+        Tok.priority = lambda self: PREC_MAP[self.value]
 
-        def uop() -> UOp:
-            if peek().type == "NUM": 
-                return Const(next().value)
+    def uop(self) -> UOp:
+        if self.peek().value == "(": self.next(); expr = self.expr(); self.next(); return expr
+        node = UOp(self.next().value, None)
+        while self.l and self.curr().value in UOPS: 
+            node.operand = self.uop()
 
-            node = UOp(next().value, None)
-            while self.l and curr().value in UOPS: 
-                node.operand = uop()
+        if self.peek():
+            match self.peek().type:
+                case "NUM": return Const(self.next().value) 
+                case "ID": return Ref(self.next().value) 
+        return node
 
-            return node
-
-        def body(): 
-            print("funcy func")
-            pass
-
-        def peek_priority_greater(priority):
-            return peek().value in BINOP_PRIORITY and peek().priority() > priority
-
-        def expr(curr_priority: int = 0):
-            if peek().value == "(":
-                next(); left = expr(); next()
-            else: 
-                left = uop() 
-            while self.l and peek().value not in [";", ")"] and peek_priority_greater(curr_priority):
-                op = next()
-                if peek().value == "(": 
-                    next(); right = expr(); next()
-                else: 
-                    right = expr(BINOP_PRIORITY[op.value])
-                left = BinOp(op.value, left, right)
-            return left
-
-        def decl(): 
-            type = curr().value
-            id = next().value
-            if peek().value == "=":
-                next()
-                return VarDecl(id, type, expr())
-            elif peek().value == "(":
-                return body()
-            else:
-                raise Exception("Invalid syntax")
-
-        return decl()
+    def expr(self,left=None,prc=0):
+        left = left if left else self.uop()
+        while self.peek() and self.peek().value != ")" and self.get_prec(self.peek()) >= prc:
+            op = self.next()
+            right = self.uop()
+            if self.peek() and self.peek().value != ")" and (self.get_prec(self.peek()) > self.get_prec(op) or self.right_asc(op)):
+                left = BOp(op.value, left, self.expr(right, self.get_prec(self.peek())))
+                continue
+            left = BOp(op.value, left, right)
+        return left
