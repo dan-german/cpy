@@ -5,7 +5,8 @@ def colored(st, color, background=False):
     return f"\u001b[{10*background+60*(color.upper() == color)+30+['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'].index(color.lower())}m{st}\u001b[0m" if color is not None else st  
 
 color_map = { 
-    VarDecl: "BLUE",
+    Func: "magenta",
+    Var: "BLUE",
     BOp: "CYAN",
     UOp: "red",
     Const: "GREEN"
@@ -15,11 +16,23 @@ def get_colored(instance, val):
     color = color_map[type(instance)]
     return colored(instance.__class__.__name__ + "(", color) + val + colored(")", color)
 
+    # @dataclass
+    # class Func: 
+    #     id: str
+    #     type: str
+    #     args: Arg
+    #     body: list
+    #     def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],stmts=[{",".join(str(x) for x in self.body)}])"
+
 def dfs(node, lvl=0, res=[]):
     if not node: return res
     indent = " "*lvl * 4
-    if isinstance(node, VarDecl):
-        res.append(indent + get_colored(node, node.id))
+    if isinstance(node, Func):
+        res.append(indent + get_colored(node, f"{node.id}({",".join(str(x) for x in node.args)})"))
+        for n in node.body: 
+            dfs(n, lvl + 1)
+    if isinstance(node, Var):
+        res.append(indent + get_colored(node, f"{node.type} {node.id}"))
         dfs(node.value, lvl + 1, res)
     elif isinstance(node, BOp):
         res.append(indent + get_colored(node, node.op))

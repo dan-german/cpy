@@ -25,7 +25,6 @@ class Lex:
     def __init__(self, code: str): 
         self.it = (Tok(m.lastgroup, m.group(m.lastgroup)) for m in re.finditer(pattern, code) if m.lastgroup != "WHITESPACE")
         self._current = None
-        self.temp = None
         self.temp = next(self.it) if self.it else None
     def __iter__(self): 
         while self.peek():
@@ -37,8 +36,5 @@ class Lex:
         self.temp = next(self.it, None)
         return self._current
     def prev(self): return self._prev
-    def curr(self): return self._current if self._current else next(self)
+    def curr(self): return self._current
     def peek(self): return self.temp if self.temp else next(self)
-
-lex = Lex("1 2")
-print(list(lex))
