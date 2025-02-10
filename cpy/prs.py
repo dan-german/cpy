@@ -15,14 +15,14 @@ PREC_MAP = {
 
 class Prs:
     def peek(self): return self.l.peek()
-    def next(self): return self.l.next()
+    def next(self): return next(self.l)
     def curr(self): return self.l.curr()
     def right_asc(self,op): return op.value in ["=", "+=", "-="]
     def get_prec(self,input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
 
     def __init__(self, code: str):
         self.l = Lex(code)
-        Tok.priority = lambda self: PREC_MAP[self.value]
+        Tok.priority = lambda t: self.get_prec(t)
 
     def uop(self) -> UOp:
         if self.peek().value == "(": self.next(); expr = self.expr(); self.next(); return expr

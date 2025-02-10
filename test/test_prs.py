@@ -1,7 +1,6 @@
 import unittest
-from cpy import Lex, Prs
+from cpy import Prs
 from cpy.lex import Tok
-from cpy.classes import *
 from cpy.debug import pn
 
 class TestPrs(unittest.TestCase):
@@ -28,6 +27,9 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.expr("a=b=c"), "(a=(b=c))")
         self.assertEqual(self.expr("a+=a+=3"),"(a+=(a+=3))")
         self.assertEqual(self.expr("c-=c-=33"),"(c-=(c-=33))")
+
+    def test_decl(self): 
+        pass
 
 if __name__ == "__main__": 
     unittest.main(verbosity=0)

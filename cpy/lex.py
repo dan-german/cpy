@@ -19,13 +19,17 @@ pattern = "|".join(f"(?P<{name}>{rgx})" for name, rgx in RE_MAP.items())
 class Tok: 
     type: str
     value: str
+    def __str__(self): return f"{self.type} {self.value}"
 
 class Lex:
     def __init__(self, code: str): 
         self.it = (Tok(m.lastgroup, m.group(m.lastgroup)) for m in re.finditer(pattern, code) if m.lastgroup != "WHITESPACE")
         self._current = None
-        self.temp = next(self.it)
-    def __iter__(self): return self
+        self.temp = None
+        self.temp = next(self.it) if self.it else None
+    def __iter__(self): 
+        while self.peek():
+            yield next(self)
     def __bool__(self): return self.temp != None
     def __next__(self): 
         self._prev = self._current
@@ -33,6 +37,8 @@ class Lex:
         self.temp = next(self.it, None)
         return self._current
     def prev(self): return self._prev
-    def curr(self): return self._current if self._current else self.next()
-    def peek(self): return self.temp if self.temp else self.next()
-    def next(self): return next(self)
+    def curr(self): return self._current if self._current else next(self)
+    def peek(self): return self.temp if self.temp else next(self)
+
+lex = Lex("1 2")
+print(list(lex))
