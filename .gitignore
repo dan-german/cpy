@@ -3,3 +3,6 @@ __pycache__
 .DS_Store
 .txt
 *.egg-info
+*.ll
+*.out
+*.o
