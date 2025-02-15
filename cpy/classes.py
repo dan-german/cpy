@@ -55,3 +55,9 @@ class Func:
     args: Arg
     body: list
     def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],stmts=[{",".join(str(x) for x in self.body)}])"
+
+@dataclass
+class If: 
+    test: UOp | BOp | Ref | Const
+    body: list
+    def __str__(self): return f"{self.__class__.__name__}(stmts=[{",".join(str(x) for x in self.body)}])"

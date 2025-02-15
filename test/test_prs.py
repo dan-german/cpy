@@ -47,7 +47,7 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("f(g());"), "Call(Ref(f),args=Call(Ref(g),args=))")
         self.assertEqual(self.to_str("f(1,a, b += 3);"), "Call(Ref(f),args=Const(1),Ref(a),BOp(Ref(b)+=Const(3)))")
         self.assertEqual(self.to_str("f(g(1));"), "Call(Ref(f),args=Call(Ref(g),args=Const(1)))")
-    
+
     def test_code(self): 
         code="""
         int f() { return 1 + 2; }
@@ -56,6 +56,12 @@ class TestPrs(unittest.TestCase):
         stmnts = Prs(code).parse()
         self.assertEqual(str(stmnts[0]), "Func(type=int,id=f,args=[],stmts=[Return(BOp(Const(1)+Const(2)))])")
         self.assertEqual(str(stmnts[1]), "Func(type=int,id=main,args=[],stmts=[Return(Call(Ref(f),args=))])")
+
+
+    # def test_if(self): 
+    #     self.assertEqual(self.to_str("if(1){}"), "If(stmts=[])")
+    #     self.assertEqual(self.to_str("if(1){}else{}"), "If(stmts=[stmts=[BOp(Ref(a)=Const(3))]])")
+    #     self.assertEqual(self.to_str("if(1){ a = 3; }"), "If(stmts=[stmts=[BOp(Ref(a)=Const(3))]])")
 
 if __name__ == "__main__": 
     unittest.main(verbosity=0)

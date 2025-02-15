@@ -2,17 +2,13 @@ from cpy.lex import Lex, Tok
 from cpy.classes import *
 from cpy.debug import *
 
+
 UOPS = { "++", "--", "+", "-" }
 PREC_MAP = { 
-    "=": 1,
-    "+=": 1,
-    "-=": 1,
-    "+": 3,
-    "-": 3,
-    "*": 4,
+    "=": 1, "+=": 1, "-=": 1,
+    "+": 3, "-": 3, "*": 4,
     "/": 4,
-    "++": 5, 
-    "--": 5,
+    "++": 5, "--": 5
 }
 
 class Prs:
@@ -22,7 +18,7 @@ class Prs:
     def right_associative(self,op): return op.value in ["=", "+=", "-="]
     def is_assignment(self): return self.peek().value in ["=", "+=", "-="] 
     def get_prec(self,input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
-    def eatable(self): return self.lex.peek() and self.lex.peek().value not in [")", ";", ",", "}"]
+    def eatable(self): return self.lex.peek() and self.lex.peek().value not in [")", ";", ",", "{", "}"]
     def next_precedence(self): return self.get_prec(self.peek())
     def is_type(self, st: str): return st in ["int"]
 
@@ -49,7 +45,6 @@ class Prs:
 
     def expr(self,left=None,prc=0):
         left = left if left else self.uop()
-        p = self.peek()
         while self.eatable() and self.next_precedence() >= prc:
             op = self.eat(type="OP")
             right = self.uop()
@@ -71,13 +66,9 @@ class Prs:
     def fn(self, type, id):
         args = self.args()
         self.eat(value="{")
-        body = []
-        while self.eatable(): body.append(self.stmnt())
-        self.eat(value="}")
-        func = Func(id, type, args, body)
-        return func
+        return Func(id, type, args, self.parse("}"))
 
-    def variable(self, type, id): 
+    def var_(self, type, id): 
         self.eat(value="=")
         vr = Var(id, type, self.expr())
         self.eat(value=";")
@@ -86,7 +77,7 @@ class Prs:
     def decl(self):
         type = self.eat(type="KEYWORD").value
         id = self.eat(type="ID").value
-        res = self.fn(type, id) if self.peek().value == "(" else self.variable(type,id)
+        res = self.fn(type, id) if self.peek().value == "(" else self.var_(type,id)
         return res
 
     def call(self, id): 
@@ -104,25 +95,35 @@ class Prs:
         self.eat(value=";")
         return r
 
+    def id_(self): 
+        id = Ref(self.eat().value)
+        if self.peek() and self.peek().value == "(":
+            call = self.call(id)
+            self.eat(value=";")
+            return call
+        elif self.peek() and self.is_assignment():
+            exp = self.expr(id)
+            self.eat(value=";")
+            return exp
+        return self.expr(id)
+
+    def if_(self):
+        self.eat(value="if")
+        test = self.expr()
+        self.eat(value="{")
+        return If(test, self.parse("}"))
+
     def stmnt(self):
         while self.eatable():
             if self.is_type(self.peek().value): return self.decl()
             elif self.peek().value == "return": return self.ret()
-            elif self.peek().type == "ID":
-                id = Ref(self.eat().value)
-                if self.peek() and self.peek().value == "(":
-                    call = self.call(id)
-                    self.eat(value=";")
-                    return call
-                elif self.peek() and self.is_assignment():
-                    exp = self.expr(id)
-                    self.eat(value=";")
-                    return exp
-                return self.expr(id)
+            elif self.peek().type == "ID": return self.id_()
+            elif self.peek().value == "if": return self.if_()
             return self.expr()
 
-    def parse(self): 
+    def parse(self, terminal_value: str = None): 
         stmnts = []
-        while self.lex: 
+        while self.peek() and self.peek().value != terminal_value: 
             stmnts.append(self.stmnt())
+        if terminal_value: self.eat(value=terminal_value)
         return stmnts
