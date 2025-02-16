@@ -39,13 +39,13 @@ class Arg:
 
 @dataclass
 class Call: 
-    id: str
+    id: Ref
     args: list[Const | Ref | UOp]
     def __str__(self): return f"{self.__class__.__name__}({str(self.id)},args={",".join([str(x) for x in self.args])})"
     
-@dataclass
+@dataclass()
 class Return: 
-    value: UOp | BOp | Ref | Const
+    value: UOp | BOp | Ref | Const = None
     def __str__(self): return f"{self.__class__.__name__}({str(self.value)})"
 
 @dataclass
@@ -60,4 +60,5 @@ class Func:
 class If: 
     test: UOp | BOp | Ref | Const
     body: list
-    def __str__(self): return f"{self.__class__.__name__}(stmts=[{",".join(str(x) for x in self.body)}])"
+    else_: "UOp | BOp | Ref | Const | If" = None
+    def __str__(self): return f"{self.__class__.__name__}(test={str(self.test)},stmts=[{",".join(str(x) for x in self.body)}],else=[{",".join(str(x) for x in self.else_) if self.else_ else ""}])"

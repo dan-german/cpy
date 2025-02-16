@@ -21,9 +21,31 @@ if 1:
     pass
 elif 2 and 3: 
     pass
-# elif 3: 
-#     pass
-# else: 
-#     pass"""
+elif 3: 
+    pass
+else: 
+    pass"""
 
     print_graph(code)
+
+
+#     If(
+#         test=Constant(value=1),
+#         body=[
+#             Pass()],
+#         orelse=[
+#             If(
+#                 test=BoolOp(
+#                     op=And(),
+#                     values=[
+#                         Constant(value=2),
+#                         Constant(value=3)]),
+#                 body=[
+#                     Pass()],
+#                 orelse=[
+#                     If(
+#                         test=Constant(value=3),
+#                         body=[
+#                             Pass()],
+#                         orelse=[
+#                             Pass()])])])

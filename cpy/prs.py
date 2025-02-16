@@ -2,7 +2,6 @@ from cpy.lex import Lex, Tok
 from cpy.classes import *
 from cpy.debug import *
 
-
 UOPS = { "++", "--", "+", "-" }
 PREC_MAP = { 
     "=": 1, "+=": 1, "-=": 1,
@@ -16,11 +15,9 @@ class Prs:
     def __init__(self, code: str): self.lex = Lex(code)
     def peek(self): return self.lex.peek()
     def right_associative(self,op): return op.value in ["=", "+=", "-="]
-    def is_assignment(self): return self.peek().value in ["=", "+=", "-="] 
     def get_prec(self,input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
     def eatable(self): return self.lex.peek() and self.lex.peek().value not in [")", ";", ",", "{", "}"]
     def next_precedence(self): return self.get_prec(self.peek())
-    def is_type(self, st: str): return st in ["int"]
 
     def eat(self, *, value = "", type=""): 
         next_tok = next(self.lex)
@@ -96,12 +93,13 @@ class Prs:
         return r
 
     def id_(self): 
+        def is_assignment(): return self.peek().value in ["=", "+=", "-="] 
         id = Ref(self.eat().value)
         if self.peek() and self.peek().value == "(":
             call = self.call(id)
             self.eat(value=";")
             return call
-        elif self.peek() and self.is_assignment():
+        elif self.peek() and is_assignment():
             exp = self.expr(id)
             self.eat(value=";")
             return exp
@@ -111,11 +109,23 @@ class Prs:
         self.eat(value="if")
         test = self.expr()
         self.eat(value="{")
-        return If(test, self.parse("}"))
+        body = self.parse("}")
+        i = If(test, body)
+        if self.peek() and self.peek().value == "else":
+            self.eat(value="else")
+            if self.peek().value == "if": 
+                i.else_ = [self.if_()]
+            elif self.peek().value == "{":
+                self.eat(value="{")
+                i.else_ = self.parse("}")
+            else: 
+                i.else_ = self.parse("}")
+        return i
 
     def stmnt(self):
+        def is_type(st: str): return st in ["int"]
         while self.eatable():
-            if self.is_type(self.peek().value): return self.decl()
+            if is_type(self.peek().value): return self.decl()
             elif self.peek().value == "return": return self.ret()
             elif self.peek().type == "ID": return self.id_()
             elif self.peek().value == "if": return self.if_()

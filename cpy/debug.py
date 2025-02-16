@@ -9,27 +9,21 @@ color_map = {
     Var: "BLUE",
     BOp: "CYAN",
     UOp: "red",
-    Const: "GREEN"
+    Call: "red",
+    Const: "GREEN",
+    Return: "red"
 }
 
-def get_colored(instance, val): 
-    color = color_map[type(instance)]
+def get_colored(instance, val=""): 
+    color = color_map[type(instance)] if type(instance) in color_map else "white"
     return colored(instance.__class__.__name__ + "(", color) + val + colored(")", color)
-
-    # @dataclass
-    # class Func: 
-    #     id: str
-    #     type: str
-    #     args: Arg
-    #     body: list
-    #     def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],stmts=[{",".join(str(x) for x in self.body)}])"
 
 def dfs(node, lvl=0, res=[]):
     if not node: return res
     indent = " "*lvl * 4
     if isinstance(node, Func):
         res.append(indent + get_colored(node, f"{node.id}({",".join(str(x) for x in node.args)})"))
-        for n in node.body: 
+        for n in node.body:
             dfs(n, lvl + 1)
     if isinstance(node, Var):
         res.append(indent + get_colored(node, f"{node.type} {node.id}"))
@@ -43,6 +37,17 @@ def dfs(node, lvl=0, res=[]):
     elif isinstance(node, UOp):
         res.append(indent + get_colored(node, node.op))
         dfs(node.operand, lvl + 1, res)
+    elif isinstance(node, Return): 
+        res.append(indent + get_colored(node))
+        dfs(node.value, lvl + 1, res)
+    elif isinstance(node, list): 
+        for item in node: 
+            dfs(item, lvl + 1, res)
+    elif isinstance(node, Call): 
+        res.append(indent + get_colored(node, node.id.id))
+        dfs(node.args, lvl + 1, res)
+    elif isinstance(node, Ref): 
+        res.append(indent + get_colored(node, node.id))
 
     return res
 
