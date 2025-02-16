@@ -63,7 +63,7 @@ class Prs:
     def fn(self, type, id):
         args = self.args()
         self.eat(value="{")
-        return Func(id, type, args, self.parse("}"))
+        return Func(id, type, args, list(self.parse("}")))
 
     def var_(self, type, id): 
         self.eat(value="=")
@@ -109,7 +109,7 @@ class Prs:
         self.eat(value="if")
         test = self.expr()
         self.eat(value="{")
-        body = self.parse("}")
+        body = list(self.parse("}"))
         i = If(test, body)
         if self.peek() and self.peek().value == "else":
             self.eat(value="else")
@@ -117,9 +117,9 @@ class Prs:
                 i.else_ = [self.if_()]
             elif self.peek().value == "{":
                 self.eat(value="{")
-                i.else_ = self.parse("}")
+                i.else_ = list(self.parse("}"))
             else: 
-                i.else_ = self.parse("}")
+                i.else_ = list(self.parse("}"))
         return i
 
     def stmnt(self):
@@ -132,8 +132,6 @@ class Prs:
             return self.expr()
 
     def parse(self, terminal_value: str = None): 
-        stmnts = []
         while self.peek() and self.peek().value != terminal_value: 
-            stmnts.append(self.stmnt())
+            yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
-        return stmnts

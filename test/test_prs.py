@@ -53,7 +53,7 @@ class TestPrs(unittest.TestCase):
         int f() { return 1 + 2; }
         int main() { return f(); }
         """
-        stmnts = Prs(code).parse()
+        stmnts = list(Prs(code).parse())
         self.assertEqual(str(stmnts[0]), "Func(type=int,id=f,args=[],stmts=[Return(BOp(Const(1)+Const(2)))])")
         self.assertEqual(str(stmnts[1]), "Func(type=int,id=main,args=[],stmts=[Return(Call(Ref(f),args=))])")
 
