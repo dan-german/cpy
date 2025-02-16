@@ -63,7 +63,7 @@ class Prs:
     def fn(self, type, id):
         args = self.args()
         self.eat(value="{")
-        return Func(id, type, args, list(self.parse("}")))
+        return Fn(id, type, args, list(self.parse("}")))
 
     def var_(self, type, id): 
         self.eat(value="=")
@@ -88,7 +88,7 @@ class Prs:
 
     def ret(self): 
         self.eat(value="return")
-        r = Return(self.expr())
+        r = Ret(self.expr())
         self.eat(value=";")
         return r
 

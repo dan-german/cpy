@@ -40,11 +40,11 @@ class TACGen:
                 res = f"{name}={left}{op}{right}"
                 self.codes.append(res)
                 return name
-            elif isinstance(node, Func): 
+            elif isinstance(node, Fn): 
                 name = node.id
                 self.codes.append(f"{name}:")
                 for item in node.body: dfs(item)
-            elif isinstance(node, Return): 
+            elif isinstance(node, Ret): 
                 return_value = dfs(node.value)
                 self.codes.append(f"return {return_value}")
             elif isinstance(node, Call): 

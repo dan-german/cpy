@@ -44,12 +44,12 @@ class Call:
     def __str__(self): return f"{self.__class__.__name__}({str(self.id)},args={",".join([str(x) for x in self.args])})"
     
 @dataclass()
-class Return: 
+class Ret: 
     value: UOp | BOp | Ref | Const = None
     def __str__(self): return f"{self.__class__.__name__}({str(self.value)})"
 
 @dataclass
-class Func: 
+class Fn: 
     id: str
     type: str
     args: Arg

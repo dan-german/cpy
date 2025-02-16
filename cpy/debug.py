@@ -5,13 +5,13 @@ def colored(st, color, background=False):
     return f"\u001b[{10*background+60*(color.upper() == color)+30+['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'].index(color.lower())}m{st}\u001b[0m" if color is not None else st  
 
 color_map = { 
-    Func: "magenta",
+    Fn: "magenta",
     Var: "BLUE",
     BOp: "CYAN",
     UOp: "red",
     Call: "red",
     Const: "GREEN",
-    Return: "red"
+    Ret: "red"
 }
 
 def get_colored(instance, val=""): 
@@ -21,7 +21,7 @@ def get_colored(instance, val=""):
 def dfs(node, lvl=0, res=[]):
     if not node: return res
     indent = " "*lvl * 4
-    if isinstance(node, Func):
+    if isinstance(node, Fn):
         res.append(indent + get_colored(node, f"{node.id}({",".join(str(x) for x in node.args)})"))
         for n in node.body:
             dfs(n, lvl + 1)
@@ -37,7 +37,7 @@ def dfs(node, lvl=0, res=[]):
     elif isinstance(node, UOp):
         res.append(indent + get_colored(node, node.op))
         dfs(node.operand, lvl + 1, res)
-    elif isinstance(node, Return): 
+    elif isinstance(node, Ret): 
         res.append(indent + get_colored(node))
         dfs(node.value, lvl + 1, res)
     elif isinstance(node, list): 

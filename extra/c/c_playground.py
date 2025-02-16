@@ -14,12 +14,14 @@ def compile_asm(code):
 
 if __name__ == "__main__": 
 
-        n = 1
-        # for i in range(n): 
-        params = ",".join(f"int a{x}" for x in range(n))
-        code = f"""
-        int f({params}) {{}}
-        """
+    n = 1
+    code = """
+    void a() {
+        int a = 1;
+        {   
+            int a = 2; 
+        }
+    }
+    """
 
-        # print(code)
-        compile_asm(code)
+    compile_asm(code)
