@@ -1,65 +1,63 @@
 from cpy.prs import Prs
-from cpy.debug import pn
+from cpy.dbg import pn
 from cpy.classes import *
+from cpy.vst import preorder
 
 if __name__ == "__main__": 
-    code="""
-    int f(int a) { int b = 3; return a * b; }
-    int main() { return f(5); }
+    code = """
+    int a() {
+        int b = 3;
+        {
+           {
+               int b = 10;
+               b += 1; 
+           }
+        }
+        b += 2;
+    }
     """
+
+    def get_args(fn: Fn): 
+        p = 0
+        args = {}
+        for arg in fn.args: 
+            args[arg.id] = f"p{p}"
+            p += 1
+        return args
 
     ast_ = list(Prs(code).parse())
 
-    pn(ast_)
+    p = 0
+    stack = []
 
-    functions = {}    
+    def resolve(id):
+        for frame in reversed(stack):
+            if id in frame:
+                return 
+        raise Exception(f"Undeclared identifier '{id}'")
 
-    def get_scope_locals(): 
-        pass
+    def get_refs(stmt): 
+        res = []
+        if isinstance(stmt, BOp):
+            res += [x for x,_ in preorder(stmt) if isinstance(x,Ref)]
+        return res
 
-    def inspect_fn(fn: Fn):
-        args = {}
-        locals = {}
-
-        for arg in fn.args: 
-            if arg.id in args: raise Exception(f"Duplicate args: {item.id}")
-            args[arg.id] = arg.type
-
-        # for local in fn.: 
-        #     if arg.id in args: raise Exception(f"Duplicate args: {item.id}")
-        #     args[arg.id] = arg.type
-
-        functions[fn.id] = { "args": args, "locals": locals }
-
-    for item in ast_:
-        if isinstance(item, Fn):
-            if item.id in functions: raise Exception(f"Duplicate identifier: {item.id}")
-            inspect_fn(item)
-
-    print(functions)
-
-"""
-***** ast *****
-
-
-Func(f(Arg(int a)))
-    Return()
-        BOp(*)
-            Ref(a)
-            Const(3)
-Func(main())
-    Return()
-        Call(f)
-                Const(5)
-
-***** sym_tables *****
-
-
-functions: 
-    f: 
-        params: {(int,a)}
-        locals: {(int,b)}
-    main: 
-        params: {}
-        locals: {}
-"""
+    def analyze_scope(scope: Scope): 
+        stack.append({})
+        for item in scope.body:
+            refs = get_refs(item)
+            for ref in refs: resolve(ref.id)
+            if isinstance(item, Var):
+                global p
+                stack[-1][item.id] = f"p{p}"
+                p += 1
+            elif isinstance(item, Scope):
+                analyze_scope(item)
+            elif isinstance(item, Ref):
+                analyze_scope(item)
+        print(stack)
+        stack.pop()
+    
+    for node in ast_: 
+        if isinstance(node, Fn):
+            analyze_scope(node.body)

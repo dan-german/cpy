@@ -53,17 +53,17 @@ class Fn:
     id: str
     type: str
     args: Arg
-    body: list
-    def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],body=[{",".join(str(x) for x in self.body)}])"
+    body: "Scope"
+    def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],body={self.body})"
 
 @dataclass
 class If: 
     test: UOp | BOp | Ref | Const
-    body: list
+    body: "Scope"
     else_: "UOp | BOp | Ref | Const | If" = None
-    def __str__(self): return f"{self.__class__.__name__}(test={str(self.test)},body=[{",".join(str(x) for x in self.body)}],else=[{",".join(str(x) for x in self.else_) if self.else_ else ""}])"
+    def __str__(self): return f"{self.__class__.__name__}(test={str(self.test)},body={str(self.body)},else={str(self.else_)})"
 
 @dataclass
 class Scope: 
     body: list
-    def __str__(self): return f"{self.__class__.__name__}(body=[{",".join(str(x) for x in self.body)}])"
+    def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.body)}])"

@@ -1,6 +1,6 @@
 from cpy.lex import Lex, Tok
 from cpy.classes import *
-from cpy.debug import *
+from cpy.dbg import *
 
 UOPS = { "++", "--", "+", "-" }
 PREC_MAP = { 
@@ -62,8 +62,8 @@ class Prs:
 
     def fn(self, type, id):
         args = self.args()
-        self.eat(value="{")
-        return Fn(id, type, args, list(self.parse("}")))
+        body = self.scope()
+        return Fn(id, type, args, body)
 
     def var_(self, type, id): 
         self.eat(value="=")
@@ -110,24 +110,20 @@ class Prs:
         self.eat(value="(")
         test = self.expr()
         self.eat(value=")")
-        self.eat(value="{")
-        body = list(self.parse("}"))
-        if_stmnt = If(test, body)
+        if_stmnt = If(test, self.scope())
         if self.peek() and self.peek().value == "else":
             self.eat(value="else")
             if self.peek().value == "if": 
-                if_stmnt.else_ = [self.if_()]
+                if_stmnt.else_ = self.if_()
             elif self.peek().value == "{":
-                self.eat(value="{")
-                if_stmnt.else_ = list(self.parse("}"))
+                if_stmnt.else_ = self.scope()
             else: 
                 if_stmnt.else_ = list(self.parse("}"))
         return if_stmnt
 
     def scope(self): 
         self.eat(value="{")
-        scp = Scope(list(self.parse("}")))
-        return scp
+        return Scope(list(self.parse("}")))
 
     def stmnt(self):
         def is_type(st: str): return st in ["int"]
@@ -143,11 +139,3 @@ class Prs:
         while self.peek() and self.peek().value != terminal_value: 
             yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
-
-if __name__ == "__main__": 
-    code = """
-    {}
-    """
-    res = list(Prs(code).parse())
-    pn(res)
-    # self.assertEqual(self.to_str("{}"), "Scope(body=[])")

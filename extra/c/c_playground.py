@@ -12,7 +12,18 @@ def dump_ast(code):
 
 if __name__ == "__main__": 
     code = """
-    {{}}
+
+    int a() {
+        {
+           {
+               int b = 10;
+               b += 1; 
+           }
+           b += 2;
+        }
+    }
+
     """
 
     compile_asm(code)
+    # dump_ast(code)

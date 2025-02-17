@@ -1,6 +1,6 @@
 from cpy.prs import Prs
 from cpy.classes import *
-from cpy.debug import pn
+from cpy.dbg import pn
 
 code="""
 int f() { 
