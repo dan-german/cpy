@@ -1,9 +1,6 @@
-from prs import Prs
-from debug import pn
-from classes import *
-# class Sem: 
-#     def __init__(self, code: str): 
-
+from cpy.prs import Prs
+from cpy.debug import pn
+from cpy.classes import *
 
 if __name__ == "__main__": 
     code="""
@@ -13,18 +10,37 @@ if __name__ == "__main__":
 
     ast_ = list(Prs(code).parse())
 
+    pn(ast_)
+
     functions = {}    
 
-    # for item in ast_: 
-    #     if isinstance(item, Fn):
-    #     pn(item)
+    def get_scope_locals(): 
+        pass
 
+    def inspect_fn(fn: Fn):
+        args = {}
+        locals = {}
 
-    # pn(ast_)
+        for arg in fn.args: 
+            if arg.id in args: raise Exception(f"Duplicate args: {item.id}")
+            args[arg.id] = arg.type
 
-    # print(ast_)
+        # for local in fn.: 
+        #     if arg.id in args: raise Exception(f"Duplicate args: {item.id}")
+        #     args[arg.id] = arg.type
+
+        functions[fn.id] = { "args": args, "locals": locals }
+
+    for item in ast_:
+        if isinstance(item, Fn):
+            if item.id in functions: raise Exception(f"Duplicate identifier: {item.id}")
+            inspect_fn(item)
+
+    print(functions)
+
 """
-ast: 
+***** ast *****
+
 
 Func(f(Arg(int a)))
     Return()
@@ -36,7 +52,8 @@ Func(main())
         Call(f)
                 Const(5)
 
-sym_tables: 
+***** sym_tables *****
+
 
 functions: 
     f: 

@@ -16,7 +16,7 @@ class Prs:
     def peek(self): return self.lex.peek()
     def right_associative(self,op): return op.value in ["=", "+=", "-="]
     def get_prec(self,input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
-    def eatable(self): return self.lex.peek() and self.lex.peek().value not in [")", ";", ",", "{", "}"]
+    def eatable(self): return self.lex.peek() and self.lex.peek().value not in [")", ";", ",", "}"] #TODO: what's eatable changes depending on context so it's best refactoring this
     def next_precedence(self): return self.get_prec(self.peek())
 
     def eat(self, *, value = "", type=""): 
@@ -107,20 +107,27 @@ class Prs:
 
     def if_(self):
         self.eat(value="if")
+        self.eat(value="(")
         test = self.expr()
+        self.eat(value=")")
         self.eat(value="{")
         body = list(self.parse("}"))
-        i = If(test, body)
+        if_stmnt = If(test, body)
         if self.peek() and self.peek().value == "else":
             self.eat(value="else")
             if self.peek().value == "if": 
-                i.else_ = [self.if_()]
+                if_stmnt.else_ = [self.if_()]
             elif self.peek().value == "{":
                 self.eat(value="{")
-                i.else_ = list(self.parse("}"))
+                if_stmnt.else_ = list(self.parse("}"))
             else: 
-                i.else_ = list(self.parse("}"))
-        return i
+                if_stmnt.else_ = list(self.parse("}"))
+        return if_stmnt
+
+    def scope(self): 
+        self.eat(value="{")
+        scp = Scope(list(self.parse("}")))
+        return scp
 
     def stmnt(self):
         def is_type(st: str): return st in ["int"]
@@ -129,9 +136,18 @@ class Prs:
             elif self.peek().value == "return": return self.ret()
             elif self.peek().type == "ID": return self.id_()
             elif self.peek().value == "if": return self.if_()
+            elif self.peek().value == "{": return self.scope()
             return self.expr()
 
     def parse(self, terminal_value: str = None): 
         while self.peek() and self.peek().value != terminal_value: 
             yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
+
+if __name__ == "__main__": 
+    code = """
+    {}
+    """
+    res = list(Prs(code).parse())
+    pn(res)
+    # self.assertEqual(self.to_str("{}"), "Scope(body=[])")

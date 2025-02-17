@@ -34,9 +34,9 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("int a=b+=1;"), "Var(type=int,id=a,value=BOp(Ref(b)+=Const(1)))")
     
     def test_fn(self):
-        self.assertEqual(self.to_str("int f(){}"), "Fn(type=int,id=f,args=[],stmts=[])")
-        self.assertEqual(self.to_str("int g(int a,int b){}"), "Fn(type=int,id=g,args=[Arg(int a),Arg(int b)],stmts=[])")
-        self.assertEqual(self.to_str("int h(int a,int b){int c = a + b; b = 1; }"), "Fn(type=int,id=h,args=[Arg(int a),Arg(int b)],stmts=[Var(type=int,id=c,value=BOp(Ref(a)+Ref(b))),BOp(Ref(b)=Const(1))])")
+        self.assertEqual(self.to_str("int f(){}"), "Fn(type=int,id=f,args=[],body=[])")
+        self.assertEqual(self.to_str("int g(int a,int b){}"), "Fn(type=int,id=g,args=[Arg(int a),Arg(int b)],body=[])")
+        self.assertEqual(self.to_str("int h(int a,int b){int c = a + b; b = 1; }"), "Fn(type=int,id=h,args=[Arg(int a),Arg(int b)],body=[Var(type=int,id=c,value=BOp(Ref(a)+Ref(b))),BOp(Ref(b)=Const(1))])")
         self.assertEqual(self.to_str("int x = o(1) * p(987);"), "Var(type=int,id=x,value=BOp(Call(Ref(o),args=Const(1))*Call(Ref(p),args=Const(987))))")
     
     def test_ret(self): 
@@ -54,15 +54,18 @@ class TestPrs(unittest.TestCase):
         int main() { return f(); }
         """
         stmnts = list(Prs(code).parse())
-        self.assertEqual(str(stmnts[0]), "Fn(type=int,id=f,args=[],stmts=[Ret(BOp(Const(1)+Const(2)))])")
-        self.assertEqual(str(stmnts[1]), "Fn(type=int,id=main,args=[],stmts=[Ret(Call(Ref(f),args=))])")
+        self.assertEqual(str(stmnts[0]), "Fn(type=int,id=f,args=[],body=[Ret(BOp(Const(1)+Const(2)))])")
+        self.assertEqual(str(stmnts[1]), "Fn(type=int,id=main,args=[],body=[Ret(Call(Ref(f),args=))])")
 
     def test_if(self): 
-        self.assertEqual(self.to_str("if(1){}"), "If(test=Const(1),stmts=[],else=[])")
-        self.assertEqual(self.to_str("if(1){}else{}"), "If(test=Const(1),stmts=[],else=[])")
-        self.assertEqual(self.to_str("if(1){}else{return 1;}"), "If(test=Const(1),stmts=[],else=[Ret(Const(1))])")
-        self.assertEqual(self.to_str("if(1){}else if(2){}"), "If(test=Const(1),stmts=[],else=[If(test=Const(2),stmts=[],else=[])])")
-        self.assertEqual(self.to_str("if(1){}else if(2){}else if(3){}"), "If(test=Const(1),stmts=[],else=[If(test=Const(2),stmts=[],else=[If(test=Const(3),stmts=[],else=[])])])")
+        self.assertEqual(self.to_str("if(1){}"), "If(test=Const(1),body=[],else=[])")
+        self.assertEqual(self.to_str("if(1){}else{}"), "If(test=Const(1),body=[],else=[])")
+        self.assertEqual(self.to_str("if(1){}else{return 1;}"), "If(test=Const(1),body=[],else=[Ret(Const(1))])")
+        self.assertEqual(self.to_str("if(1){}else if(2){}"), "If(test=Const(1),body=[],else=[If(test=Const(2),body=[],else=[])])")
+        self.assertEqual(self.to_str("if(1){}else if(2){}else if(3){}"), "If(test=Const(1),body=[],else=[If(test=Const(2),body=[],else=[If(test=Const(3),body=[],else=[])])])")
+    
+    def test_scopes(self): 
+        self.assertEqual(self.to_str("{}"), "Scope(body=[])")
 
 if __name__ == "__main__": 
     unittest.main(verbosity=0)
