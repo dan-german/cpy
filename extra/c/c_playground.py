@@ -14,16 +14,10 @@ if __name__ == "__main__":
     code = """
 
     int a() {
-        {
-           {
-               int b = 10;
-               b += 1; 
-           }
-           b += 2;
-        }
+        int *b;
     }
 
     """
 
-    compile_asm(code)
-    # dump_ast(code)
+    # compile_asm(code)
+    dump_ast(code)

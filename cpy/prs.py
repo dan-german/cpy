@@ -2,7 +2,7 @@ from cpy.lex import Lex, Tok
 from cpy.classes import *
 from cpy.dbg import *
 
-UOPS = { "++", "--", "+", "-" }
+UOPS = { "++", "--", "+", "-", "*" }
 PREC_MAP = { 
     "=": 1, "+=": 1, "-=": 1,
     "+": 3, "-": 3, "*": 4,
@@ -35,6 +35,7 @@ class Prs:
                 return id
 
         if self.peek().value == "(": self.eat(); expr = self.expr(); self.eat(); return expr
+        if not self.eatable(): return None
         node = UOp(self.eat().value, None)
         while self.lex and self.lex.curr().value in UOPS: 
             node.operand = self.uop()
@@ -66,13 +67,15 @@ class Prs:
         return Fn(id, type, args, body)
 
     def var_(self, type, id): 
-        self.eat(value="=")
+        if self.peek().value == "=": self.eat(value="=")
         vr = Var(id, type, self.expr())
         self.eat(value=";")
         return vr
 
     def decl(self):
         type = self.eat(type="KEYWORD").value
+        if self.peek().value == "*": 
+            type += self.eat().value
         id = self.eat(type="ID").value
         res = self.fn(type, id) if self.peek().value == "(" else self.var_(type,id)
         return res
@@ -126,7 +129,7 @@ class Prs:
         return Scope(list(self.parse("}")))
 
     def stmnt(self):
-        def is_type(st: str): return st in ["int"]
+        def is_type(st: str): return st in ["int", "float"]
         while self.eatable():
             if is_type(self.peek().value): return self.decl()
             elif self.peek().value == "return": return self.ret()
@@ -139,3 +142,9 @@ class Prs:
         while self.peek() and self.peek().value != terminal_value: 
             yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
+
+
+if __name__ == "__main__":
+    code = "int a = *b;"
+    res = list(Prs(code).parse())
+    pn(res)

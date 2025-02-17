@@ -29,14 +29,15 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("c-=c-=33;"), "BOp(Ref(c)-=BOp(Ref(c)-=Const(33)))")
     
     def test_variable(self):
+        self.assertEqual(self.to_str("int a=*b;"), "Var(type=int,id=a,value=UOp(*Ref(b)))")
         self.assertEqual(self.to_str("int a=2;"), "Var(type=int,id=a,value=Const(2))")
         self.assertEqual(self.to_str("int a=2*b;"), "Var(type=int,id=a,value=BOp(Const(2)*Ref(b)))")
         self.assertEqual(self.to_str("int a=b+=1;"), "Var(type=int,id=a,value=BOp(Ref(b)+=Const(1)))")
     
     def test_fn(self):
         self.assertEqual(self.to_str("int f(){}"), "Fn(type=int,id=f,args=[],body=Scope([]))")
-        self.assertEqual(self.to_str("int g(int a,int b){}"), "Fn(type=int,id=g,args=[Arg(int a),Arg(int b)],body=Scope([]))")
-        self.assertEqual(self.to_str("int h(int a,int b){int c = a + b; b = 1; }"), "Fn(type=int,id=h,args=[Arg(int a),Arg(int b)],body=Scope([Var(type=int,id=c,value=BOp(Ref(a)+Ref(b))),BOp(Ref(b)=Const(1))]))")
+        self.assertEqual(self.to_str("int g(float a,int b){}"), "Fn(type=int,id=g,args=[Arg(float a),Arg(int b)],body=Scope([]))")
+        self.assertEqual(self.to_str("float h(int a,int b){int c = a + b; b = 1; }"), "Fn(type=float,id=h,args=[Arg(int a),Arg(int b)],body=Scope([Var(type=int,id=c,value=BOp(Ref(a)+Ref(b))),BOp(Ref(b)=Const(1))]))")
         self.assertEqual(self.to_str("int x = o(1) * p(987);"), "Var(type=int,id=x,value=BOp(Call(Ref(o),args=Const(1))*Call(Ref(p),args=Const(987))))")
     
     def test_ret(self): 
@@ -45,17 +46,17 @@ class TestPrs(unittest.TestCase):
     def test_call(self):
         self.assertEqual(self.to_str("f();"), "Call(Ref(f),args=)")
         self.assertEqual(self.to_str("f(g());"), "Call(Ref(f),args=Call(Ref(g),args=))")
-        self.assertEqual(self.to_str("f(1,a, b += 3);"), "Call(Ref(f),args=Const(1),Ref(a),BOp(Ref(b)+=Const(3)))")
+        self.assertEqual(self.to_str("f(1,*a, b += 3);"), "Call(Ref(f),args=Const(1),UOp(*Ref(a)),BOp(Ref(b)+=Const(3)))")
         self.assertEqual(self.to_str("f(g(1));"), "Call(Ref(f),args=Call(Ref(g),args=Const(1)))")
 
     def test_code(self): 
         code="""
-        int f() { return 1 + 2; }
-        int main() { return f(); }
+        float f() { return 1.0f + 2.0f; }
+        int* main() { return f(); }
         """
-        stmnts = list(Prs(code).parse())
-        self.assertEqual(str(stmnts[0]), "Fn(type=int,id=f,args=[],body=Scope([Ret(BOp(Const(1)+Const(2)))]))")
-        self.assertEqual(str(stmnts[1]), "Fn(type=int,id=main,args=[],body=Scope([Ret(Call(Ref(f),args=))]))")
+        stmts = list(Prs(code).parse())
+        self.assertEqual(str(stmts[0]), "Fn(type=float,id=f,args=[],body=Scope([Ret(BOp(Const(1.0)+Const(2.0)))]))")
+        self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],body=Scope([Ret(Call(Ref(f),args=))]))")
 
     def test_if(self): 
         self.assertEqual(self.to_str("if(1){}"), "If(test=Const(1),body=Scope([]),else=None)")
