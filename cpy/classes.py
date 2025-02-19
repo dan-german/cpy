@@ -5,7 +5,6 @@ class BOp:
     op: str
     left: "BOp | Const"
     right: "BOp | Const"
-
     def __str__(self): return f"{self.__class__.__name__}({str(self.left)}{str(self.op)}{str(self.right)})"
 
 @dataclass
@@ -53,8 +52,8 @@ class Fn:
     id: str
     type: str
     args: Arg
-    body: "Scope"
-    def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],body={self.body})"
+    scope: "Scope"
+    def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],scope={self.scope})"
 
 @dataclass
 class If: 
@@ -65,5 +64,5 @@ class If:
 
 @dataclass
 class Scope: 
-    body: list
-    def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.body)}])"
+    stmts: list
+    def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"

@@ -43,7 +43,7 @@ class TACGen:
             elif isinstance(node, Fn): 
                 name = node.id
                 self.codes.append(f"{name}:")
-                for item in node.body: dfs(item)
+                for item in node.scope: dfs(item)
             elif isinstance(node, Ret): 
                 return_value = dfs(node.value)
                 self.codes.append(f"return {return_value}")

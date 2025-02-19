@@ -35,9 +35,9 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("int a=b+=1;"), "Var(type=int,id=a,value=BOp(Ref(b)+=Const(1)))")
     
     def test_fn(self):
-        self.assertEqual(self.to_str("int f(){}"), "Fn(type=int,id=f,args=[],body=Scope([]))")
-        self.assertEqual(self.to_str("int g(float a,int b){}"), "Fn(type=int,id=g,args=[Arg(float a),Arg(int b)],body=Scope([]))")
-        self.assertEqual(self.to_str("float h(int a,int b){int c = a + b; b = 1; }"), "Fn(type=float,id=h,args=[Arg(int a),Arg(int b)],body=Scope([Var(type=int,id=c,value=BOp(Ref(a)+Ref(b))),BOp(Ref(b)=Const(1))]))")
+        self.assertEqual(self.to_str("void f(){}"), "Fn(type=void,id=f,args=[],scope=Scope([]))")
+        self.assertEqual(self.to_str("int g(float a,int b){}"), "Fn(type=int,id=g,args=[Arg(float a),Arg(int b)],scope=Scope([]))")
+        self.assertEqual(self.to_str("float h(int a,int b){int c = a + b; b = 1; }"), "Fn(type=float,id=h,args=[Arg(int a),Arg(int b)],scope=Scope([Var(type=int,id=c,value=BOp(Ref(a)+Ref(b))),BOp(Ref(b)=Const(1))]))")
         self.assertEqual(self.to_str("int x = o(1) * p(987);"), "Var(type=int,id=x,value=BOp(Call(Ref(o),args=Const(1))*Call(Ref(p),args=Const(987))))")
     
     def test_ret(self): 
@@ -55,8 +55,8 @@ class TestPrs(unittest.TestCase):
         int* main() { return f(); }
         """
         stmts = list(Prs(code).parse())
-        self.assertEqual(str(stmts[0]), "Fn(type=float,id=f,args=[],body=Scope([Ret(BOp(Const(1.0)+Const(2.0)))]))")
-        self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],body=Scope([Ret(Call(Ref(f),args=))]))")
+        self.assertEqual(str(stmts[0]), "Fn(type=float,id=f,args=[],scope=Scope([Ret(BOp(Const(1.0)+Const(2.0)))]))")
+        self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],scope=Scope([Ret(Call(Ref(f),args=))]))")
 
     def test_if(self): 
         self.assertEqual(self.to_str("if(1){}"), "If(test=Const(1),body=Scope([]),else=None)")

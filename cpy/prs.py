@@ -2,7 +2,7 @@ from cpy.lex import Lex, Tok
 from cpy.classes import *
 from cpy.dbg import *
 
-UOPS = { "++", "--", "+", "-", "*" }
+UOPS = { "++", "--", "+", "-", "*", "&" }
 PREC_MAP = { 
     "=": 1, "+=": 1, "-=": 1,
     "+": 3, "-": 3, "*": 4,
@@ -129,7 +129,7 @@ class Prs:
         return Scope(list(self.parse("}")))
 
     def stmnt(self):
-        def is_type(st: str): return st in ["int", "float"]
+        def is_type(st: str): return st in ["int", "float", "void"]
         while self.eatable():
             if is_type(self.peek().value): return self.decl()
             elif self.peek().value == "return": return self.ret()
@@ -143,8 +143,7 @@ class Prs:
             yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
 
-
 if __name__ == "__main__":
-    code = "int a = *b;"
+    code = "int a = &b;"
     res = list(Prs(code).parse())
     pn(res)

@@ -1,5 +1,5 @@
 from cpy.classes import *
-from cpy.vst import preorder
+from cpy.vst import dfs
 from cpy.lex import Lex
 
 # https://github.com/tinygrad/tinygrad/blob/d5183e158441145c3bc2c50615f989dc6a658895/tinygrad/helpers.py#L28
@@ -10,11 +10,11 @@ color_map = {
     Fn: "MAGENTA",
     Var: "BLUE",
     BOp: "CYAN",
-    UOp: "red",
-    Call: "red",
+    UOp: "RED",
+    Call: "RED",
     Const: "GREEN",
-    Ret: "red",
-    Scope: "YELLOW",
+    Ret: "RED",
+    Scope: "YELLOW"
 }
 
 def get_colored(instance, val=""): 
@@ -40,10 +40,22 @@ def pn(node):
             Scope: lambda _: ""
         }
     
-        for n, lvl in preorder(node):
+        for n, lvl in dfs(node):
             if type(n) in format_map:
                 res.append(indent(lvl) + get_colored(n, format_map[type(n)](n)))
     
         return res
 
     print("\n".join(visit_with_formatting(node)))
+
+def pst(table): 
+    def print_vars(table):
+        for type,value in table.vars.items():
+            print(f"    {value} '({type})'")
+            for child in table.children:
+                print_vars(child)
+
+    print("fn:")
+    for fn,sym_table in table.functions.items():
+        print(f"  {fn}:")
+        print_vars(sym_table)
