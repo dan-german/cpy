@@ -16,7 +16,10 @@ def dump_llvmir(code):
 
 if __name__ == "__main__": 
     code = """
-    void h() {
+        int main() { 
+            int b = 2;
+            b += 3;
+        }
     }
     """
 

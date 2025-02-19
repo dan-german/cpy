@@ -1,54 +1,59 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
+from collections import defaultdict
 
 @dataclass
-class BOp: 
+class Node: sym: dict = field(default_factory=dict,init=False) # scope might be the only node needing a sym table
+
+@dataclass
+class BOp(Node): 
     op: str
     left: "BOp | Const"
     right: "BOp | Const"
     def __str__(self): return f"{self.__class__.__name__}({str(self.left)}{str(self.op)}{str(self.right)})"
 
 @dataclass
-class Const: 
+class Const(Node): 
     value: str
     def __str__(self): return f"{self.__class__.__name__}({self.value})"
 
 @dataclass
-class Var:
+class Var(Node):
     id: str
     type: str
     value: BOp | Const
     def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},value={str(self.value)})"
 
 @dataclass
-class Ref: 
+class Ref(Node):
     id: str
     def __str__(self): return f"{self.__class__.__name__}({self.id})"
 
 @dataclass 
-class UOp: 
+class UOp(Node): 
     op: str
     operand: "Const | Ref | UOp"
     def __str__(self): return f"{self.__class__.__name__}({self.op}{self.operand})"
 
 @dataclass
-class Arg: 
+class Arg(Node): 
     type: str
     id: str
     def __str__(self): return f"{self.__class__.__name__}({self.type} {self.id})"
 
 @dataclass
-class Call: 
+class Call(Node): 
     id: Ref
     args: list[Const | Ref | UOp]
     def __str__(self): return f"{self.__class__.__name__}({str(self.id)},args={",".join([str(x) for x in self.args])})"
     
 @dataclass()
-class Ret: 
-    value: UOp | BOp | Ref | Const = None
+class Ret(Node): 
+    value: UOp | BOp | Ref | Const = field(default=None)
     def __str__(self): return f"{self.__class__.__name__}({str(self.value)})"
 
 @dataclass
-class Fn: 
+class Fn(Node): 
     id: str
     type: str
     args: Arg
@@ -56,13 +61,14 @@ class Fn:
     def __str__(self): return f"{self.__class__.__name__}(type={self.type},id={self.id},args=[{",".join(str(x) for x in self.args)}],scope={self.scope})"
 
 @dataclass
-class If: 
+class If(Node): 
     test: UOp | BOp | Ref | Const
     body: "Scope"
-    else_: "UOp | BOp | Ref | Const | If" = None
+    else_: "UOp | BOp | Ref | Const | If" = field(default=None)
     def __str__(self): return f"{self.__class__.__name__}(test={str(self.test)},body={str(self.body)},else={str(self.else_)})"
 
 @dataclass
-class Scope: 
+class Scope(Node): 
     stmts: list
+    parent: "Scope" = field(default=None)
     def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"

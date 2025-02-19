@@ -4,25 +4,25 @@ from cpy.lex import Tok
 from cpy.dbg import pn
 
 class TestPrs(unittest.TestCase):
-    def to_str(self, input) -> str: return str(Prs(input).stmnt())
+    def to_str(self, input, fn = Prs.stmnt) -> str: return str(fn(Prs(input)))
     
     def test_uop(self):
-        self.assertEqual(self.to_str("abc"), "Ref(abc)")
-        self.assertEqual(self.to_str("1"), "Const(1)")
-        self.assertEqual(self.to_str("-+p"), "UOp(-UOp(+Ref(p)))")
-        self.assertEqual(self.to_str("-+9"), "UOp(-UOp(+Const(9)))")
+        self.assertEqual(self.to_str("abc", Prs.expr), "Ref(abc)")
+        self.assertEqual(self.to_str("1", Prs.expr), "Const(1)")
+        self.assertEqual(self.to_str("-+p", Prs.expr), "UOp(-UOp(+Ref(p)))")
+        self.assertEqual(self.to_str("-+9", Prs.expr), "UOp(-UOp(+Const(9)))")
     
     def test_bop(self):
-        self.assertEqual(self.to_str("a+b"), "BOp(Ref(a)+Ref(b))")
-        self.assertEqual(self.to_str("1+2"), "BOp(Const(1)+Const(2))")
-        self.assertEqual(self.to_str("(1+2)"), "BOp(Const(1)+Const(2))")
-        self.assertEqual(self.to_str("1+2+3"), "BOp(BOp(Const(1)+Const(2))+Const(3))")
-        self.assertEqual(self.to_str("1+(2+3)"), "BOp(Const(1)+BOp(Const(2)+Const(3)))")
-        self.assertEqual(self.to_str("(1+2)+3"), "BOp(BOp(Const(1)+Const(2))+Const(3))")
-        self.assertEqual(self.to_str("(1+2)*3"), "BOp(BOp(Const(1)+Const(2))*Const(3))")
-        self.assertEqual(self.to_str("11+22+33"), "BOp(BOp(Const(11)+Const(22))+Const(33))")
-        self.assertEqual(self.to_str("11+22*33"), "BOp(Const(11)+BOp(Const(22)*Const(33)))")
-        self.assertEqual(self.to_str("999*999*999*999"), "BOp(BOp(BOp(Const(999)*Const(999))*Const(999))*Const(999))")
+        self.assertEqual(self.to_str("a+b", Prs.expr), "BOp(Ref(a)+Ref(b))")
+        self.assertEqual(self.to_str("1+2", Prs.expr), "BOp(Const(1)+Const(2))")
+        self.assertEqual(self.to_str("(1+2)", Prs.expr), "BOp(Const(1)+Const(2))")
+        self.assertEqual(self.to_str("1+2+3", Prs.expr), "BOp(BOp(Const(1)+Const(2))+Const(3))")
+        self.assertEqual(self.to_str("1+(2+3)", Prs.expr), "BOp(Const(1)+BOp(Const(2)+Const(3)))")
+        self.assertEqual(self.to_str("(1+2)+3", Prs.expr), "BOp(BOp(Const(1)+Const(2))+Const(3))")
+        self.assertEqual(self.to_str("(1+2)*3", Prs.expr), "BOp(BOp(Const(1)+Const(2))*Const(3))")
+        self.assertEqual(self.to_str("11+22+33", Prs.expr), "BOp(BOp(Const(11)+Const(22))+Const(33))")
+        self.assertEqual(self.to_str("11+22*33", Prs.expr), "BOp(Const(11)+BOp(Const(22)*Const(33)))")
+        self.assertEqual(self.to_str("999*999*999*999", Prs.expr), "BOp(BOp(BOp(Const(999)*Const(999))*Const(999))*Const(999))")
 
         self.assertEqual(self.to_str("a=b=c;"), "BOp(Ref(a)=BOp(Ref(b)=Ref(c)))")
         self.assertEqual(self.to_str("a+=a+=3;"), "BOp(Ref(a)+=BOp(Ref(a)+=Const(3)))")
@@ -41,6 +41,7 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("int x = o(1) * p(987);"), "Var(type=int,id=x,value=BOp(Call(Ref(o),args=Const(1))*Call(Ref(p),args=Const(987))))")
     
     def test_ret(self): 
+        self.assertEqual(self.to_str("return a*b;"), "Ret(BOp(Ref(a)*Ref(b)))")
         self.assertEqual(self.to_str("return 2;"), "Ret(Const(2))")
     
     def test_call(self):
@@ -48,15 +49,6 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("f(g());"), "Call(Ref(f),args=Call(Ref(g),args=))")
         self.assertEqual(self.to_str("f(1,*a, b += 3);"), "Call(Ref(f),args=Const(1),UOp(*Ref(a)),BOp(Ref(b)+=Const(3)))")
         self.assertEqual(self.to_str("f(g(1));"), "Call(Ref(f),args=Call(Ref(g),args=Const(1)))")
-
-    def test_code(self): 
-        code="""
-        float f() { return 1.0f + 2.0f; }
-        int* main() { return f(); }
-        """
-        stmts = list(Prs(code).parse())
-        self.assertEqual(str(stmts[0]), "Fn(type=float,id=f,args=[],scope=Scope([Ret(BOp(Const(1.0)+Const(2.0)))]))")
-        self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],scope=Scope([Ret(Call(Ref(f),args=))]))")
 
     def test_if(self): 
         self.assertEqual(self.to_str("if(1){}"), "If(test=Const(1),body=Scope([]),else=None)")
@@ -67,6 +59,21 @@ class TestPrs(unittest.TestCase):
     
     def test_scopes(self): 
         self.assertEqual(self.to_str("{}"), "Scope([])") # TODO: disallow this
+        self.assertEqual(self.to_str("{{}}"), "Scope([Scope([])])")
+        self.assertEqual(self.to_str("{{}{}}"), "Scope([Scope([]),Scope([])])")
+
+    def test_ref(self):
+        self.assertEqual(self.to_str("a;"), "Ref(a)")
+
+    def test_code(self): 
+        code="""
+        float f() { return 1.0f + 2.0f; }
+        int* main() { return f(); }
+        """
+        stmts = list(Prs(code).parse())
+        self.assertEqual(str(stmts[0]), "Fn(type=float,id=f,args=[],scope=Scope([Ret(BOp(Const(1.0)+Const(2.0)))]))")
+        self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],scope=Scope([Ret(Call(Ref(f),args=))]))")
+
 
 if __name__ == "__main__": 
     unittest.main(verbosity=0)

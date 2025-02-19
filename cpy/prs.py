@@ -106,7 +106,9 @@ class Prs:
             exp = self.expr(id)
             self.eat(value=";")
             return exp
-        return self.expr(id)
+        ref=self.expr(id)
+        self.eat(value=";")
+        return ref
 
     def if_(self):
         self.eat(value="if")

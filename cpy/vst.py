@@ -15,18 +15,18 @@ def dfs(node):
                 if val and type(val) not in [int,str]:
                     stack.append((val,level+1))
 
-def bfs(node):
+def bfs(node, ignore_types=()):
     q = deque([node])
-    while q: 
+    while q:
         top = q.popleft()
-        if type(top) == list: 
-            q += top
+        if isinstance(top, ignore_types): continue
+        elif isinstance(top, list): q.extend(top)
         else:
             yield top
-            for name in vars(top): 
-                val = getattr(top,name)
-                if type(val) not in [int,str]:
-                    q.append(val)
+            q.extend(
+                val for val in vars(top).values()
+                if not isinstance(val, (int, str, dict,ignore_types))
+            )
 
 if __name__ == "__main__":
     code = """

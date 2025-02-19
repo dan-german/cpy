@@ -1,7 +1,7 @@
 import cpy.dbg as dbg
 from cpy.prs import Prs
 from cpy.classes import *
-from cpy.vst import dfs,bfs
+from cpy.vst import dfs
 
 class GlobalCall(Exception): 
     def __init__(self,msg): super().__init__(f"Global scope call '{msg}'")
@@ -81,7 +81,6 @@ class Sem:
                 table.add_fn(self.analyze(node.scope.stmts,table),node.id)
             if isinstance(node, Scope):
                 self.analyze(node.stmts,table)
-                # table.add_child(self.analyze(node.stmts,table))
             elif isinstance(node, Var):
                 table.add_var(node.type, node.id)
             elif isinstance(node, Ref):
