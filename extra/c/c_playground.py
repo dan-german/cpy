@@ -15,14 +15,10 @@ def dump_llvmir(code):
     subprocess.run(args, input=code, text=True)
 
 if __name__ == "__main__": 
-    code = """
-        int main() { 
-            int b = 2;
-            b += 3;
-        }
-    }
-    """
+    # void a(int a = 3) {} not allowed
+    # int a(){int b(){}} not allowed
+    code = "{{}}"
 
-    # compile_asm(code)
-    dump_ast(code)
+    compile_asm(code)
+    # dump_ast(code)
     # dump_llvmir(code)

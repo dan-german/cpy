@@ -1,7 +1,3 @@
-int f(int a) { 
-    return a * 2;
-}
-
+int a = 3;
 int main() {
-    return f(3);
 }

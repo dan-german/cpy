@@ -17,9 +17,9 @@ color_map = {
     Scope: "YELLOW"
 }
 
-def get_colored(instance, val=""): 
+def get_colored(instance, args="",suffix=""): 
     color = color_map[type(instance)] if type(instance) in color_map else "white"
-    return colored(instance.__class__.__name__ + f"({val})", color)
+    return colored(instance.__class__.__name__ + f"({args})" + " " + suffix, color)
 
 def pn(node): 
     def visit_with_formatting(node, lvl=0, res=None):
@@ -28,21 +28,24 @@ def pn(node):
         res = res or []
         indent = lambda lvl: " " * lvl * 4 if lvl > 0 else ""
     
-        format_map = {
+        arg_map = {
             Fn: lambda n: f"{n.id}({','.join(map(str, n.args))})",
             Var: lambda n: f"{n.type} {n.id}",
             BOp: lambda n: n.op,
             Const: lambda n: n.value,
             UOp: lambda n: n.op,
-            Ret: lambda _: "",
             Call: lambda n: n.id.id,
             Ref: lambda n: n.id,
-            Scope: lambda _: ""
+        }
+
+        suffix_map = { 
+            Scope: lambda n: str(n.sym) if len(n.sym) > 0 else ""
         }
     
         for n, lvl in dfs(node):
-            if type(n) in format_map:
-                res.append(indent(lvl) + get_colored(n, format_map[type(n)](n)))
+            args = arg_map[type(n)](n) if type(n) in arg_map else ""
+            suffix = suffix_map[type(n)](n) if type(n) in suffix_map else ""
+            res.append(indent(lvl) + get_colored(n, args, suffix))
     
         return res
 

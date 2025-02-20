@@ -14,10 +14,7 @@ class Prs:
     def __repr__(self): return f"lex at: {self.lex.curr()}"
     def __init__(self, code: str): self.lex = Lex(code)
     def peek(self): return self.lex.peek()
-    def right_associative(self,op): return op.value in ["=", "+=", "-="]
-    def get_prec(self,input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
     def eatable(self): return self.lex.peek() and self.lex.peek().value not in [")", ";", ",", "}"] #TODO: what's eatable changes depending on context so it's best refactoring this
-    def next_precedence(self): return self.get_prec(self.peek())
 
     def eat(self, *, value = "", type=""): 
         next_tok = next(self.lex)
@@ -42,17 +39,21 @@ class Prs:
         return node
 
     def expr(self,left=None,prc=0):
+        def get_precedence(input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
+        def next_precedence(): return get_precedence(self.peek())
+        def right_associative(op): return op.value in ["=", "+=", "-="]
+
         left = left if left else self.uop()
-        while self.eatable() and self.next_precedence() >= prc:
+        while self.eatable() and next_precedence() >= prc:
             op = self.eat(type="OP")
             right = self.uop()
-            if self.eatable() and (self.next_precedence() > self.get_prec(op) or self.right_associative(op)):
-                left = BOp(op.value, left, self.expr(right, self.get_prec(self.peek())))
+            if self.eatable() and (next_precedence() > get_precedence(op) or right_associative(op)):
+                left = BOp(op.value, left, self.expr(right, get_precedence(self.peek())))
                 continue
             left = BOp(op.value, left, right)
         return left
 
-    def args(self): 
+    def args(self): # TODO - Support function pointers
         args = []
         self.eat(value="(")
         while self.peek().value != ")":
@@ -146,6 +147,6 @@ class Prs:
         if terminal_value: self.eat(value=terminal_value)
 
 if __name__ == "__main__":
-    code = "int a = &b;"
+    code = "{{}}"
     res = list(Prs(code).parse())
     pn(res)

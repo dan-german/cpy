@@ -57,8 +57,8 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("if(1){}else if(2){}"), "If(test=Const(1),body=Scope([]),else=If(test=Const(2),body=Scope([]),else=None))")
         self.assertEqual(self.to_str("if(1){}else if(2){}else if(3){}"), "If(test=Const(1),body=Scope([]),else=If(test=Const(2),body=Scope([]),else=If(test=Const(3),body=Scope([]),else=None)))")
     
-    def test_scopes(self): 
-        self.assertEqual(self.to_str("{}"), "Scope([])") # TODO: disallow this
+    def test_scopes(self):
+        self.assertEqual(self.to_str("{}"), "Scope([])") 
         self.assertEqual(self.to_str("{{}}"), "Scope([Scope([])])")
         self.assertEqual(self.to_str("{{}{}}"), "Scope([Scope([]),Scope([])])")
 
@@ -73,7 +73,6 @@ class TestPrs(unittest.TestCase):
         stmts = list(Prs(code).parse())
         self.assertEqual(str(stmts[0]), "Fn(type=float,id=f,args=[],scope=Scope([Ret(BOp(Const(1.0)+Const(2.0)))]))")
         self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],scope=Scope([Ret(Call(Ref(f),args=))]))")
-
 
 if __name__ == "__main__": 
     unittest.main(verbosity=0)
