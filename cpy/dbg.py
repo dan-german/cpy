@@ -1,5 +1,5 @@
 from cpy.classes import *
-from cpy.vst import dfs
+from cpy.vst import preorder
 from cpy.lex import Lex
 
 # https://github.com/tinygrad/tinygrad/blob/d5183e158441145c3bc2c50615f989dc6a658895/tinygrad/helpers.py#L28
@@ -42,7 +42,7 @@ def pn(node):
             Scope: lambda n: str(n.sym) if len(n.sym) > 0 else ""
         }
     
-        for n, lvl in dfs(node):
+        for n, lvl in preorder(node):
             args = arg_map[type(n)](n) if type(n) in arg_map else ""
             suffix = suffix_map[type(n)](n) if type(n) in suffix_map else ""
             res.append(indent(lvl) + get_colored(n, args, suffix))

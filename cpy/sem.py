@@ -1,6 +1,6 @@
 from cpy.prs import Prs
 from cpy.classes import *
-from cpy.vst import dfs
+from cpy.vst import preorder
 import cpy.dbg as dbg
 
 class GlobalCall(Exception): 
@@ -43,7 +43,7 @@ def analyze(ast):
                 if node.id in scope.sym: raise Redefinition(node.id)
                 scope.sym.vars[node.id] = get_id(node)
             elif isinstance(node, BOp):
-                for child,_ in dfs(node):
+                for child,_ in preorder(node):
                     print(child)
                     if isinstance(child,Ref):
                         ref_id = find_ref(scope,child.id)
