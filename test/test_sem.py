@@ -26,7 +26,7 @@ class TestSem(unittest.TestCase):
 
    ########################    SYMBOL TABLES    ########################
    def analyze_code(self,code): return analyze(list(Prs(code).parse()))
-   def filter_scopes(self,ast): return [node for node in bfs(ast) if isinstance(node,Scope)]
+   def filter_scopes(self,ast): return [node for node,_ in bfs(ast) if isinstance(node,Scope)]
 
    def test_functions(self):
       self.assertEqual(self.analyze_code("void a(){}int b(){}int c(){}")[2],{"a":"void","b":"int","c":"int"})

@@ -10,22 +10,6 @@ import cpy.dbg as dbg
 bad_types = [int,str,dict,Sym]
 bad_ids = ["parent"]
 
-def postorder(node):
-    stack = [(node,False)]
-    while stack: 
-        top,processed=stack.pop()
-        if type(top) == list:
-            stack.extend([(node,False) for node in reversed(top)])
-        elif processed: 
-            yield top
-        else: 
-            stack.append((top,True))
-            for name in reversed(vars(top)):
-                if name in bad_ids: continue
-                val = getattr(top, name)
-                if val and type(val) not in bad_types:
-                    stack.append((val,False)) 
-
 def preorder(node):
     stack = [(node, 0)]
     while stack: 
@@ -41,16 +25,16 @@ def preorder(node):
                     stack.append((val,level+1))
 
 def bfs(node, ignore_types=()):
-    q = deque([node])
+    q = deque([(node,0)])
     while q:
-        top = q.popleft()
+        top,level = q.popleft()
         if isinstance(top, ignore_types):
             continue
         elif isinstance(top, list):
-            q.extend(top)
+            q.extend((node,level) for node in top)
         else:
-            yield top
+            yield top,level
             q.extend(
-                val for name, val in vars(top).items()
+                (val,level+1) for name, val in vars(top).items()
                 if name not in bad_ids and not isinstance(val, (*bad_types, *ignore_types)) and val
             )
