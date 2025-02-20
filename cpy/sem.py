@@ -18,7 +18,7 @@ class DefUnallowed(Exception):
 class GlobalScope(Exception): 
     def __init__(self): super().__init__(f"Global scopes unallowed")
 
-def analyze(ast):
+def analyze(stmts: list) -> tuple:
     def find_ref(scope:Scope,id:str): 
         """
         Climb the scopes tree to find the ref's declaration
@@ -54,7 +54,7 @@ def analyze(ast):
     global_vars = {}
     functions = {}
 
-    for node in ast:
+    for node in stmts:
         if isinstance(node, Fn):
             if node.id in [*global_vars,*functions]: raise Redefinition(node.id)
             functions[node.id] = node.type
@@ -67,4 +67,4 @@ def analyze(ast):
             if node.id in [*global_vars,*functions]: raise Redefinition(node.id)
             global_vars[node.id] = get_id(node)
     
-    return ast,global_vars,functions
+    return stmts,global_vars,functions
