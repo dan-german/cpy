@@ -29,5 +29,18 @@ class TestVst(unittest.TestCase):
         ]  
         self.assertEqual([(str(node),level) for node,level in preorder(ast)],expected)
 
+    def test_postorder(self):
+        ast = list(Prs("1*2*3*4").parse())
+        expected = [
+            'Const(1)',
+            'Const(2)',
+            'BOp(Const(1)*Const(2))',
+            'Const(3)',
+            'BOp(BOp(Const(1)*Const(2))*Const(3))',
+            'Const(4)',
+            'BOp(BOp(BOp(Const(1)*Const(2))*Const(3))*Const(4))',
+        ]  
+        self.assertEqual([str(node) for node in postorder(ast)],expected)
+
 if __name__ == "__main__": 
     unittest.main(verbosity=0)

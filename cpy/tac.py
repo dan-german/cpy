@@ -1,3 +1,4 @@
+from cpy.vst import *
 from cpy.prs import Prs
 from cpy.classes import *
 import cpy.dbg as dbg
@@ -15,10 +16,24 @@ int a = 1 + 2 * 3;
 
 """
 expected:
-g1 = 2 * 3
-a0 = 1 + g1
+t0 = 2 * 3
+a0 = 1 + t0
 """
 
 if __name__ == "__main__":
     ast = list(Prs(code).parse())
     dbg.pn(ast)
+    levels = defaultdict(list)
+
+    for node,level in bfs(ast):
+        levels[level].append(node)
+
+    print(levels)
+
+
+{0: [Var(id='a', type='int', value=BOp(op='+', left=Const(value='1'), right=BOp(op='*', left=Const(value='2'), right=Const(value='3'))))], 
+ 1: [BOp(op='+', left=Const(value='1'), right=BOp(op='*', left=Const(value='2'), right=Const(value='3')))], 
+ 2: [Const(value='1'), 
+     BOp(op='*', left=Const(value='2'), right=Const(value='3'))], 
+ 3: [Const(value='2'), 
+     Const(value='3')]}
