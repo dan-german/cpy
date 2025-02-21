@@ -11,6 +11,7 @@ from dataclasses import fields
 IGNORE_TYPES = (int,str,dict,Sym)
 
 def get_next_level(node,level:int): 
+    if isinstance(node,list): return [(n,level) for n in node]
     nodes = []
     for f in fields(node):
         if f.type in IGNORE_TYPES: continue
@@ -23,35 +24,21 @@ def postorder(node):
     while stack: 
         top,processed=stack.pop()
         if processed: 
-            yield top
-        elif type(top) == list: 
-            stack.extend([item,False] for item in reversed(top))
-        else: 
-            stack.append((top,True))
-            stack.extend([(n,False) for n,_ in reversed(get_next_level(top,0))])
+            if not isinstance(top,list): yield top
+            continue
+        stack.append((top,True))
+        stack.extend([(n,False) for n,_ in reversed(get_next_level(top,0))])
 
 def preorder(node):
     stack = [(node, 0)]
     while stack: 
         top,level=stack.pop()
-        if type(top) == list:
-            stack.extend(reversed([(item,level) for item in top]))
-        else: 
-            yield top,level
-            stack.extend(reversed(get_next_level(top,level)))
+        if not isinstance(top, list): yield top, level
+        stack.extend(reversed(get_next_level(top,level)))
 
 def bfs(node):
     q = deque([(node,0)])
     while q:
         top,level = q.popleft()
-        if isinstance(top, list):
-            q.extend((node,level) for node in top)
-        else:
-            yield top,level
-            q.extend(get_next_level(top,level))
-
-if __name__ == "__main__":
-    ast = list(Prs("1*2").parse())
-
-    for node in postorder(ast):
-        print(node)
+        if not isinstance(top, list): yield top, level
+        q.extend(get_next_level(top,level))
