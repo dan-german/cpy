@@ -18,10 +18,12 @@ if __name__ == "__main__":
     # void a(int a = 3) {} not allowed
     # int a(){int b(){}} not allowed
     code = """
-    int main() { 
-    }
 """
-
     compile_asm(code)
     # dump_ast(code)
     # dump_llvmir(code)
+"""
+where are redefinitions unallowed:
+    int f() { int a; int a; }
+    int f(int a) { int a; }
+"""

@@ -23,10 +23,10 @@ class GlobalScope(Exception):
 def analyze(stmts: list) -> tuple:
     id_counter = defaultdict(int)
 
-    def get_id(node:Var):
-        temp = (node.type, f"{node.id}{id_counter[node.id]}")
-        id_counter[node.id] += 1 
-        return temp
+    def add_symbol(node,table:SymbolTable,scope_type:str):
+        id = node.id + str(id_counter[node.id])
+        id_counter[node.id] += 1
+        table[node.id] = Symbol(id,node.type,scope_type)
 
     def validate_refs(node,scope:Scope):
         var_refs = []
@@ -41,45 +41,47 @@ def analyze(stmts: list) -> tuple:
         for ref in [*var_refs,*fn_refs]: 
             if not scope.sym_for_ref(ref): raise Undeclared(ref.id)
 
-    def collect_symbols_for_scope(scope:Scope,v=0):
+    def analyze_scope(scope:Scope,v=0):
         for node in scope.stmts:
             validate_refs(node,scope)
             if isinstance(node, Fn): raise DefUnallowed(node.id)
             elif isinstance(node, Scope):
                 node.parent_scope = scope
-                collect_symbols_for_scope(node,v)
+                analyze_scope(node,v)
             elif isinstance(node, Var):
                 if node.id in scope.sym: raise Redefinition(node.id)
-                scope.sym.vars[node.id] = get_id(node)
+                add_symbol(node,scope.sym,"local")
+                # scope.sym.vars[node.id] = get_id(node)
 
-    global_vars = {}
+    global_vars = SymbolTable()
     functions = {}
+
+    def add_args_symbols(fn:Fn):
+        for arg in fn.args: 
+            add_symbol(arg,fn.scope.sym,"arg")
 
     for node in stmts:
         if isinstance(node, Fn):
-            if node.id in [*global_vars,*functions]: raise Redefinition(node.id)
+            if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
             functions[node.id] = node.type
-            collect_symbols_for_scope(node.scope)
+            add_args_symbols(node)
+            analyze_scope(node.scope)
         elif isinstance(node, Ref):
             if node.id not in global_vars: raise Undeclared(node.id)
         elif isinstance(node, Scope):
             raise GlobalScope()
         elif isinstance(node, Var):
-            if node.id in [*global_vars,*functions]: raise Redefinition(node.id)
-            global_vars[node.id] = get_id(node)
-            id_counter[node.id] += 1
-    
+            if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
+            add_symbol(node,global_vars,"global")
+
     return stmts,global_vars,functions
 
 if __name__ == "__main__":
     code = """
-    int f(int a) { return a; }
-    int main() { return f(2); }
     """
-    code = "int f(){a;}"
     tree = list(Prs(code).parse())
+    _,globals,fn=analyze(tree)
+    print(globals)
     # dbg.pn(tree)
-    # print(analyze(tree))
-    a,b,c=analyze(tree)
-    print(b,c)
-    dbg.pn(tree)
+    # print(globals)    
+    # print("\n".join([str(x) for x in globals]))    

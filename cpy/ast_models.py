@@ -5,21 +5,21 @@ class FieldMetadata:
     TRAVERSABLE = "TRAVERSABLE"
 
 @dataclass
-class Sym:
-    vars: dict = field(default_factory=dict)
-    def __contains__(self,other): return other in self.vars
-    def __len__(self): return len(self.vars)
-    def __str__(self): return str(self.vars)
-    def __getitem__(self,id):return self.vars[id]
+class Symbol: 
+    id: str
+    type: str
+    scope: str
+    # def __str__(self): return f"{self.id} {self.type} {self.scope}"
+    def __str__(self): return f"{self.type},{self.id},{self.scope}"
 
-# @dataclass
-# class Sym:
-#     vars: dict = field(default_factory=dict)
-#     functions: dict = field(default_factory=dict)
-#     def __contains__(self,other): return other in self.vars or other in self.functions
-#     def __len__(self): return len(self.vars) + len(self.functions)
-#     def __str__(self): return f"vars: {str(self.vars)} fn: {str(self.functions)}"
-#     def __getitem__(self,id):return self.vars[id]
+@dataclass
+class SymbolTable: 
+    symbols: dict[Symbol] = field(default_factory=dict)
+    def __str__(self): return ",".join(f"{k}:({str(v)})" for k,v in self.symbols.items())
+    def __setitem__(self,k,v): self.symbols[k]=v
+    def __getitem__(self,k): return self.symbols[k]
+    def __contains__(self,v): return v in self.symbols
+    def __len__(self): return len(self.symbols)
 
 @dataclass
 class BOp: 
@@ -87,7 +87,7 @@ class If:
 class Scope: 
     stmts: list
     parent_scope: "Scope" = field(default=None,metadata={FieldMetadata.TRAVERSABLE:False})
-    sym: Sym = field(default_factory=Sym)
+    sym: SymbolTable = field(default_factory=SymbolTable,metadata={FieldMetadata.TRAVERSABLE:False})
     def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"
 
     def sym_for_ref(self,ref:Ref): 

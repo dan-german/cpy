@@ -1,6 +1,5 @@
 from cpy.ast_models import *
 from cpy.vst import preorder
-from cpy.lex import Lex
 
 # https://github.com/tinygrad/tinygrad/blob/d5183e158441145c3bc2c50615f989dc6a658895/tinygrad/helpers.py#L28
 def colored(st, color, background=False): 
@@ -41,6 +40,7 @@ def pn(node):
 
         suffix_map = { 
             Scope: lambda n: str(n.sym) if len(n.sym) > 0 else ""
+            # Scope: lambda n: print(type(n.sym))
         }
     
         for n, lvl in preorder(node):
@@ -52,14 +52,14 @@ def pn(node):
 
     print("\n".join(visit_with_formatting(node)))
 
-def pst(table): 
-    def print_vars(table):
-        for type,value in table.vars.items():
-            print(f"    {value} '({type})'")
-            for child in table.children:
-                print_vars(child)
+# def pst(table): 
+#     def print_vars(table):
+#         for type,value in table.vars.items():
+#             print(f"    {value} '({type})'")
+#             for child in table.children:
+#                 print_vars(child)
 
-    print("fn:")
-    for fn,sym_table in table.functions.items():
-        print(f"  {fn}:")
-        print_vars(sym_table)
+#     print("fn:")
+#     for fn,sym_table in table.functions.items():
+#         print(f"  {fn}:")
+#         print_vars(sym_table)

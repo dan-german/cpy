@@ -13,7 +13,9 @@ class TestSem(unittest.TestCase):
       with self.assertRaises(Undeclared):analyze(Prs("int f(){return a;} int a = 1;").parse())
       
    def test_var_redefinition(self): 
-      with self.assertRaises(Redefinition):analyze(Prs("int a=1; int a=1;").parse())
+      with self.assertRaises(Redefinition):analyze(Prs("int a; int a;").parse())
+      with self.assertRaises(Redefinition):analyze(Prs("void f(){int a; int a;}").parse())
+      with self.assertRaises(Redefinition):analyze(Prs("void f(int a){int a;}").parse())
       with self.assertRaises(Redefinition):analyze(Prs("int a(){}int a(){}").parse())
       with self.assertRaises(Redefinition):analyze(Prs("void f(){int c=1; int c=1;}").parse())
       with self.assertRaises(Redefinition):analyze(Prs("int a(){} int a=3;").parse())
@@ -33,49 +35,26 @@ class TestSem(unittest.TestCase):
    def test_functions(self):
       self.assertEqual(self.analyze_code("void a(){}int b(){}int c(){}")[2],{"a":"void","b":"int","c":"int"})
 
-   def test_global_vars(self): 
-      _,global_vars,_ = self.analyze_code("int a;int b;int c;")
-      self.assertEqual(global_vars, {"a":("int","a0"),"b":("int","b0"),"c":("int","c0")})
+   def test_tables1(self): 
+      self.assertEqual(str(self.analyze_code("int a;int b;int c;")[1]), "a:(int,a0,global),b:(int,b0,global),c:(int,c0,global)")
 
-   def test_code1(self): 
-      code = """
-         int a(){
-            int a=1;
-            int b=2;
-            {
-               float a=2;
-               float b=2;
-            }
-         }
-      """
-      expected_inner_scope = {
-         "a":("int","a0"),
-         "b":("int","b0")
-      }
-      expected_outer_scope = {
-         "a":("float","a1"),
-         "b":("float","b1")
-      }
-      ast,global_vars,functions = self.analyze_code(code)
-      dbg.pn(ast)
-      # print()
-      scopes1 = self.filter_scopes(ast)
-      self.assertEqual(scopes1[0].sym,Sym(expected_inner_scope))
-      self.assertEqual(scopes1[1].sym,Sym(expected_outer_scope))
-      self.assertEqual(global_vars, {})
-      self.assertEqual(functions, {"a":"int"})
-
-   def test_code2(self): 
-      code = """
-         int a = 1;
-         int main(){int a;}
-      """
-      ast,global_vars,functions=self.analyze_code(code)
+   def test_tables2(self): 
+      ast,globals,functions = self.analyze_code("int a;int f(){int a;}")
+      self.assertEqual(str(globals), "a:(int,a0,global)")
+      self.assertEqual(functions, {"f": "int"})
       scopes = self.filter_scopes(ast)
-      self.assertEqual(scopes[0].sym,Sym({"a":("int","a1")}))
-      # self.assertEqual(scopes[1].sym,Sym({"b":("int","b0")}))
-      self.assertEqual(global_vars, {"a":("int","a0")})
-      # self.assertEqual(functions, {"f":"float","b":"void"})
+      self.assertEqual(str(scopes[0].sym),"a:(int,a1,local)")
+
+   def test_tables3(self): 
+      ast,globals,functions = self.analyze_code("int f(){int a; {int a;}}int a;")
+      self.assertEqual(str(globals), "a:(int,a2,global)")
+      self.assertEqual(functions, {"f": "int"})
+      scopes = self.filter_scopes(ast)
+      self.assertEqual(str(scopes[0].sym),"a:(int,a0,local)")
+      self.assertEqual(str(scopes[1].sym),"a:(int,a1,local)")
+
+   # def test_params():
+   #    pass
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)
