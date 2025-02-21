@@ -1,5 +1,5 @@
 from cpy.lex import Lex, Tok
-from cpy.classes import *
+from cpy.ast_models import *
 from cpy.dbg import *
 
 UOPS = { "++", "--", "+", "-", "*", "&" }

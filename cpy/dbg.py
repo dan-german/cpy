@@ -1,4 +1,4 @@
-from cpy.classes import *
+from cpy.ast_models import *
 from cpy.vst import preorder
 from cpy.lex import Lex
 

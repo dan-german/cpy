@@ -4,11 +4,19 @@ Various AST traversal algorithms.
 
 from collections import deque
 from cpy.prs import *
-from cpy.classes import *
+from cpy.ast_models import *
 import cpy.dbg as dbg
+from dataclasses import fields
 
-bad_types = [int,str,dict,Sym]
-bad_ids = ["parent"]
+IGNORE_TYPES = (int,str,dict,Sym)
+
+def get_next_level(node,level:int): 
+    nodes = []
+    for f in fields(node):
+        if f.type in IGNORE_TYPES: continue
+        if f.metadata.get(FieldMetadata.TRAVERSABLE) is False: continue
+        nodes.append((getattr(node, f.name), level + 1))
+    return nodes
 
 def postorder(node): 
     stack = [(node,False)] 
@@ -20,37 +28,30 @@ def postorder(node):
             stack.extend([item,False] for item in reversed(top))
         else: 
             stack.append((top,True))
-            for name in reversed(vars(top)):
-                if name in bad_ids: continue
-                val = getattr(top, name)
-                if val and type(val) not in bad_types:
-                    stack.append((val,False))
+            stack.extend([(n,False) for n,_ in reversed(get_next_level(top,0))])
 
 def preorder(node):
     stack = [(node, 0)]
     while stack: 
-        curr,level=stack.pop()
-        if type(curr) == list:
-            stack.extend(reversed([(item,level) for item in curr]))
+        top,level=stack.pop()
+        if type(top) == list:
+            stack.extend(reversed([(item,level) for item in top]))
         else: 
-            yield curr,level
-            for name in reversed(vars(curr)):
-                if name in bad_ids: continue
-                val = getattr(curr, name)
-                if val and type(val) not in bad_types:
-                    stack.append((val,level+1))
+            yield top,level
+            stack.extend(reversed(get_next_level(top,level)))
 
-def bfs(node, ignore_types=()):
+def bfs(node):
     q = deque([(node,0)])
     while q:
         top,level = q.popleft()
-        if isinstance(top, ignore_types):
-            continue
-        elif isinstance(top, list):
+        if isinstance(top, list):
             q.extend((node,level) for node in top)
         else:
             yield top,level
-            q.extend(
-                (val,level+1) for name, val in vars(top).items()
-                if name not in bad_ids and not isinstance(val, (*bad_types, *ignore_types)) and val
-            )
+            q.extend(get_next_level(top,level))
+
+if __name__ == "__main__":
+    ast = list(Prs("1*2").parse())
+
+    for node in postorder(ast):
+        print(node)

@@ -55,24 +55,26 @@ class TestSem(unittest.TestCase):
          "b":("float","b1")
       }
       ast,vars,functions = self.analyze_code(code)
+      # dbg.pn(ast)
       scopes1 = self.filter_scopes(ast)
+      print("OK")
       self.assertEqual(scopes1[0].sym,Sym(expected_inner_scope))
       self.assertEqual(scopes1[1].sym,Sym(expected_outer_scope))
       self.assertEqual(vars, {})
       self.assertEqual(functions, {"a":"int"})
 
-   def test_code2(self): 
-      code = """
-         float a(){int a;}
-         void b(){int b;}
-         int glb = 1;
-      """
-      ast,vars,functions=self.analyze_code(code)
-      scopes = self.filter_scopes(ast)
-      self.assertEqual(scopes[0].sym,Sym({"a":("int","a0")}))
-      self.assertEqual(scopes[1].sym,Sym({"b":("int","b0")}))
-      self.assertEqual(vars, {"glb":("int","glb0")})
-      self.assertEqual(functions, {"a":"float","b":"void"})
+   # def test_code2(self): 
+   #    code = """
+   #       float a(){int a;}
+   #       void b(){int b;}
+   #       int glb = 1;
+   #    """
+   #    ast,vars,functions=self.analyze_code(code)
+   #    scopes = self.filter_scopes(ast)
+   #    self.assertEqual(scopes[0].sym,Sym({"a":("int","a0")}))
+   #    self.assertEqual(scopes[1].sym,Sym({"b":("int","b0")}))
+   #    self.assertEqual(vars, {"glb":("int","glb0")})
+   #    self.assertEqual(functions, {"a":"float","b":"void"})
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

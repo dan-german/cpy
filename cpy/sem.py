@@ -1,7 +1,7 @@
-from cpy.prs import Prs
-from cpy.classes import *
+from cpy.ast_models import *
 from cpy.vst import preorder
 import cpy.dbg as dbg
+from collections import defaultdict
 
 class GlobalCall(Exception): 
     def __init__(self,msg): super().__init__(f"Global scope call '{msg}'")
@@ -19,37 +19,29 @@ class GlobalScope(Exception):
     def __init__(self): super().__init__(f"Global scopes unallowed")
 
 def analyze(stmts: list) -> tuple:
-    def find_ref(scope:Scope,id:str): 
-        """
-        Climb the scopes tree to find the ref's declaration
-        """
-        if id in scope.sym: return scope.sym[id]
-        if scope.parent: return find_ref(scope.parent, id)
-        raise Undeclared(id)
-
     id_counter = defaultdict(int)
+
     def get_id(node:Var):
         temp = (node.type, f"{node.id}{id_counter[node.id]}")
         id_counter[node.id] += 1 
         return temp
 
-    def analyze_function(scope,v=0):
+    def build_symbol_table(scope:Scope,v=0):
         for node in scope.stmts:
             if isinstance(node, Fn): raise DefUnallowed(node.id)
             elif isinstance(node, Scope):
-                node.parent = scope
-                analyze_function(node,v)
+                node.parent_scope = scope
+                build_symbol_table(node,v)
             elif isinstance(node, Var):
                 if node.id in scope.sym: raise Redefinition(node.id)
                 scope.sym.vars[node.id] = get_id(node)
             elif isinstance(node, BOp):
                 for child,_ in preorder(node):
-                    print(child)
                     if isinstance(child,Ref):
-                        ref_id = find_ref(scope,child.id)
-                        print(ref_id)
+                        if not (ref_id := scope.find_ref(child.id)): raise Undeclared(child.id)
             elif isinstance(node,Ref):
-                ref_id = find_ref(scope,node.id)
+                ref_id = scope.find_ref(node.id)
+                if not (ref_id := scope.find_ref(node.id)): raise Undeclared(node.id)
 
     global_vars = {}
     functions = {}
@@ -58,7 +50,7 @@ def analyze(stmts: list) -> tuple:
         if isinstance(node, Fn):
             if node.id in [*global_vars,*functions]: raise Redefinition(node.id)
             functions[node.id] = node.type
-            analyze_function(node.scope)
+            build_symbol_table(node.scope)
         elif isinstance(node, Ref):
             if node.id not in global_vars: raise Undeclared(node.id)
         elif isinstance(node, Scope):

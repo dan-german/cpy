@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Optional
-from collections import defaultdict
+from enum import Enum
+
+class FieldMetadata: 
+    TRAVERSABLE = "TRAVERSABLE"
 
 @dataclass
 class Sym:
@@ -75,6 +77,14 @@ class If:
 @dataclass
 class Scope: 
     stmts: list
-    parent: "Scope" = field(default=None)
+    parent_scope: "Scope" = field(default=None,metadata={FieldMetadata.TRAVERSABLE:False})
     sym: Sym = field(default_factory=Sym)
     def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"
+
+    def find_ref(self,id:str): 
+        """
+        Climb the scopes tree to find the ref's declaration
+        """
+        if id in self.sym: return self.sym[id]
+        if self.parent_scope: return self.parent_scope.find_ref(id)
+        return None
