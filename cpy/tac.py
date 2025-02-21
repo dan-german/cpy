@@ -26,35 +26,34 @@ class TACOp:
     right: str
     def __str__(self): return f"  {self.id} = {self.left} {self.op} {self.right}"
 
-def to_operand(node) -> str:
+def to_operand(node,scope:Scope) -> str:
     if isinstance(node,Const): return node.value
+    elif isinstance(node,Ref): return scope.sym_for_ref(node.id)[1]
     elif id(node) in table: return table[id(node)][0]
 
 t = 0
 def generate_id():
     global t
-    id = f"t{t}"
+    id = f"G{t}" # G for generated
     t += 1
     return id
 
-def node_to_tac(node):
+def node_to_tac(node,scope):
     print(type(node))
     if isinstance(node,BOp):
-        add_bop(node)
+        add_bop(node,scope)
     elif isinstance(node,Var):
-        value = to_operand(node.value)
-        tac = TACVar(generate_id(),value)
+        value = to_operand(node.value,scope)
+        tac = TACVar(scope.find_ref(node.id)[1],value)
         table[id(node)] = (tac.id, tac)
 
 def inspect_scope(scope:Scope):
-    print("inspecting scope: ",scope)
     for node in postorder(scope):
         node_to_tac(node,scope)
 
-def add_bop(node:BOp):
-    print('adding bop')
-    left = to_operand(node.left)
-    right = to_operand(node.right)
+def add_bop(node:BOp,scope:Scope):
+    left = to_operand(node.left,scope)
+    right = to_operand(node.right,scope)
     tac = TACOp(generate_id(),left,node.op,right)
     table[id(node)] = (tac.id, tac)
 
@@ -70,13 +69,20 @@ if __name__ == "__main__":
         int a() {
             int a=1;
             int b=2;
-            {
-                float a=2;
-                float b=2;
-            }
+            return a + b;
+        }
+        int main() { 
+            return a();
         }
     """
+
+    code = """
+    int f() { return 1; }
+    int main() { return f(); }
+    """
+
     ast = list(Prs(code).parse())
+
     dbg.pn(ast)
     analyze(ast)
     for node in ast: 

@@ -5,12 +5,12 @@ Various AST traversal algorithms.
 from collections import deque
 from cpy.prs import *
 from cpy.ast_models import *
-import cpy.dbg as dbg
 from dataclasses import fields
 
 IGNORE_TYPES = (int,str,dict,Sym)
 
-def get_next_level(node,level:int): 
+def _get_children(node,level:int): 
+    if not node: return []
     if isinstance(node,list): return [(n,level) for n in node]
     nodes = []
     for f in fields(node):
@@ -27,18 +27,18 @@ def postorder(node):
             if not isinstance(top,list): yield top
             continue
         stack.append((top,True))
-        stack.extend([(n,False) for n,_ in reversed(get_next_level(top,0))])
+        stack.extend([(n,False) for n,_ in reversed(_get_children(top,0))])
 
 def preorder(node):
     stack = [(node, 0)]
     while stack: 
         top,level=stack.pop()
         if not isinstance(top, list): yield top, level
-        stack.extend(reversed(get_next_level(top,level)))
+        stack.extend(reversed(_get_children(top,level)))
 
 def bfs(node):
     q = deque([(node,0)])
     while q:
         top,level = q.popleft()
         if not isinstance(top, list): yield top, level
-        q.extend(get_next_level(top,level))
+        q.extend(_get_children(top,level))

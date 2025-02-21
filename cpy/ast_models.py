@@ -7,10 +7,19 @@ class FieldMetadata:
 @dataclass
 class Sym:
     vars: dict = field(default_factory=dict)
-    functions: dict = field(default_factory=dict)
-    def __contains__(self,other): return other in self.vars or other in self.functions
-    def __len__(self): return len(self.vars) + len(self.functions)
-    def __str__(self): return f"vars: {str(self.vars)} fn: {str(self.functions)}"
+    def __contains__(self,other): return other in self.vars
+    def __len__(self): return len(self.vars)
+    def __str__(self): return str(self.vars)
+    def __getitem__(self,id):return self.vars[id]
+
+# @dataclass
+# class Sym:
+#     vars: dict = field(default_factory=dict)
+#     functions: dict = field(default_factory=dict)
+#     def __contains__(self,other): return other in self.vars or other in self.functions
+#     def __len__(self): return len(self.vars) + len(self.functions)
+#     def __str__(self): return f"vars: {str(self.vars)} fn: {str(self.functions)}"
+#     def __getitem__(self,id):return self.vars[id]
 
 @dataclass
 class BOp: 
@@ -50,7 +59,7 @@ class Arg:
 
 @dataclass
 class Call: 
-    id: Ref
+    id: str
     args: list[Const | Ref | UOp]
     def __str__(self): return f"{self.__class__.__name__}({str(self.id)},args={",".join([str(x) for x in self.args])})"
     
@@ -81,10 +90,10 @@ class Scope:
     sym: Sym = field(default_factory=Sym)
     def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"
 
-    def find_ref(self,id:str): 
+    def sym_for_ref(self,ref:Ref): 
         """
         Climb the scopes tree to find the ref's declaration
         """
-        if id in self.sym: return self.sym[id]
-        if self.parent_scope: return self.parent_scope.find_ref(id)
+        if ref.id in self.sym: return self.sym[ref.id]
+        if self.parent_scope: return self.parent_scope.sym_for_ref(ref)
         return None

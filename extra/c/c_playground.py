@@ -17,7 +17,10 @@ def dump_llvmir(code):
 if __name__ == "__main__": 
     # void a(int a = 3) {} not allowed
     # int a(){int b(){}} not allowed
-    code = "{{}}"
+    code = """
+    int main() { 
+    }
+"""
 
     compile_asm(code)
     # dump_ast(code)

@@ -38,17 +38,17 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("void f(){}"), "Fn(type=void,id=f,args=[],scope=Scope([]))")
         self.assertEqual(self.to_str("int g(float a,int b){}"), "Fn(type=int,id=g,args=[Arg(float a),Arg(int b)],scope=Scope([]))")
         self.assertEqual(self.to_str("float h(int a,int b){int c = a + b; b = 1; }"), "Fn(type=float,id=h,args=[Arg(int a),Arg(int b)],scope=Scope([Var(type=int,id=c,value=BOp(Ref(a)+Ref(b))),BOp(Ref(b)=Const(1))]))")
-        self.assertEqual(self.to_str("int x = o(1) * p(987);"), "Var(type=int,id=x,value=BOp(Call(Ref(o),args=Const(1))*Call(Ref(p),args=Const(987))))")
+        self.assertEqual(self.to_str("int x = o(1) * p(987);"), "Var(type=int,id=x,value=BOp(Call(o,args=Const(1))*Call(p,args=Const(987))))")
     
     def test_ret(self): 
         self.assertEqual(self.to_str("return a*b;"), "Ret(BOp(Ref(a)*Ref(b)))")
         self.assertEqual(self.to_str("return 2;"), "Ret(Const(2))")
     
     def test_call(self):
-        self.assertEqual(self.to_str("f();"), "Call(Ref(f),args=)")
-        self.assertEqual(self.to_str("f(g());"), "Call(Ref(f),args=Call(Ref(g),args=))")
-        self.assertEqual(self.to_str("f(1,*a, b += 3);"), "Call(Ref(f),args=Const(1),UOp(*Ref(a)),BOp(Ref(b)+=Const(3)))")
-        self.assertEqual(self.to_str("f(g(1));"), "Call(Ref(f),args=Call(Ref(g),args=Const(1)))")
+        self.assertEqual(self.to_str("f();"), "Call(f,args=)")
+        self.assertEqual(self.to_str("f(g());"), "Call(f,args=Call(g,args=))")
+        self.assertEqual(self.to_str("f(1,*a, b += 3);"), "Call(f,args=Const(1),UOp(*Ref(a)),BOp(Ref(b)+=Const(3)))")
+        self.assertEqual(self.to_str("f(g(1));"), "Call(f,args=Call(g,args=Const(1)))")
 
     def test_if(self): 
         self.assertEqual(self.to_str("if(1){}"), "If(test=Const(1),body=Scope([]),else=None)")
@@ -72,7 +72,7 @@ class TestPrs(unittest.TestCase):
         """
         stmts = list(Prs(code).parse())
         self.assertEqual(str(stmts[0]), "Fn(type=float,id=f,args=[],scope=Scope([Ret(BOp(Const(1.0)+Const(2.0)))]))")
-        self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],scope=Scope([Ret(Call(Ref(f),args=))]))")
+        self.assertEqual(str(stmts[1]), "Fn(type=int*,id=main,args=[],scope=Scope([Ret(Call(f,args=))]))")
 
 if __name__ == "__main__": 
     unittest.main(verbosity=0)

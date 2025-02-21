@@ -9,6 +9,8 @@ class TestSem(unittest.TestCase):
       with self.assertRaises(Undeclared):analyze(Prs("a;").parse())
       with self.assertRaises(Undeclared):analyze(Prs("int f(){a;}").parse())
       with self.assertRaises(Undeclared):analyze(Prs("int f(){{int b = 2;}b;}").parse())
+      with self.assertRaises(Undeclared):analyze(Prs("int f(){a;} int a = 1;").parse())
+      with self.assertRaises(Undeclared):analyze(Prs("int f(){return a;} int a = 1;").parse())
       
    def test_var_redefinition(self): 
       with self.assertRaises(Redefinition):analyze(Prs("int a=1; int a=1;").parse())
@@ -54,27 +56,26 @@ class TestSem(unittest.TestCase):
          "a":("float","a1"),
          "b":("float","b1")
       }
-      ast,vars,functions = self.analyze_code(code)
-      # dbg.pn(ast)
+      ast,global_vars,functions = self.analyze_code(code)
+      dbg.pn(ast)
+      # print()
       scopes1 = self.filter_scopes(ast)
-      print("OK")
       self.assertEqual(scopes1[0].sym,Sym(expected_inner_scope))
       self.assertEqual(scopes1[1].sym,Sym(expected_outer_scope))
-      self.assertEqual(vars, {})
+      self.assertEqual(global_vars, {})
       self.assertEqual(functions, {"a":"int"})
 
-   # def test_code2(self): 
-   #    code = """
-   #       float a(){int a;}
-   #       void b(){int b;}
-   #       int glb = 1;
-   #    """
-   #    ast,vars,functions=self.analyze_code(code)
-   #    scopes = self.filter_scopes(ast)
-   #    self.assertEqual(scopes[0].sym,Sym({"a":("int","a0")}))
-   #    self.assertEqual(scopes[1].sym,Sym({"b":("int","b0")}))
-   #    self.assertEqual(vars, {"glb":("int","glb0")})
-   #    self.assertEqual(functions, {"a":"float","b":"void"})
+   def test_code2(self): 
+      code = """
+         int a = 1;
+         int main(){int a;}
+      """
+      ast,global_vars,functions=self.analyze_code(code)
+      scopes = self.filter_scopes(ast)
+      self.assertEqual(scopes[0].sym,Sym({"a":("int","a1")}))
+      # self.assertEqual(scopes[1].sym,Sym({"b":("int","b0")}))
+      self.assertEqual(global_vars, {"a":("int","a0")})
+      # self.assertEqual(functions, {"f":"float","b":"void"})
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

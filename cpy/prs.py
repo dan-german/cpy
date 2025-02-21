@@ -26,10 +26,10 @@ class Prs:
         match self.peek().type:
             case "NUM": return Const(self.eat().value) 
             case "ID": 
-                id = Ref(self.eat().value)
+                id = self.eat().value
                 if self.peek() and self.peek().value == "(": 
                     return self.call(id)
-                return id
+                return Ref(id)
 
         if self.peek().value == "(": self.eat(); expr = self.expr(); self.eat(); return expr
         if not self.eatable(): return None
@@ -98,16 +98,16 @@ class Prs:
 
     def id_(self): 
         def is_assignment(): return self.peek().value in ["=", "+=", "-="] 
-        id = Ref(self.eat().value)
+        id = self.eat(type="ID").value
         if self.peek() and self.peek().value == "(":
             call = self.call(id)
             self.eat(value=";")
             return call
         elif self.peek() and is_assignment():
-            exp = self.expr(id)
+            exp = self.expr(Ref(id))
             self.eat(value=";")
             return exp
-        ref=self.expr(id)
+        ref=self.expr(Ref(id))
         self.eat(value=";")
         return ref
 

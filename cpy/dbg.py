@@ -36,6 +36,7 @@ def pn(node):
             UOp: lambda n: n.op,
             Call: lambda n: n.id.id,
             Ref: lambda n: n.id,
+            Arg: lambda n: n.id
         }
 
         suffix_map = { 
