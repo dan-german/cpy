@@ -33,7 +33,7 @@ def pn(node):
             BOp: lambda n: n.op,
             Const: lambda n: n.value,
             UOp: lambda n: n.op,
-            Call: lambda n: n.id.id,
+            Call: lambda n: n.id,
             Ref: lambda n: n.id,
             Arg: lambda n: n.id
         }

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from enum import Enum
 
 class FieldMetadata: 
     TRAVERSABLE = "TRAVERSABLE"
@@ -9,7 +8,6 @@ class Symbol:
     id: str
     type: str
     scope: str
-    # def __str__(self): return f"{self.id} {self.type} {self.scope}"
     def __str__(self): return f"{self.type},{self.id},{self.scope}"
 
 @dataclass
@@ -90,10 +88,10 @@ class Scope:
     sym: SymbolTable = field(default_factory=SymbolTable,metadata={FieldMetadata.TRAVERSABLE:False})
     def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"
 
-    def sym_for_ref(self,ref:Ref): 
+    def find_var(self,ref:Ref): 
         """
         Climb the scopes tree to find the ref's declaration
         """
         if ref.id in self.sym: return self.sym[ref.id]
-        if self.parent_scope: return self.parent_scope.sym_for_ref(ref)
+        if self.parent_scope: return self.parent_scope.find_var(ref)
         return None

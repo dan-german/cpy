@@ -12,6 +12,10 @@ class TestSem(unittest.TestCase):
       with self.assertRaises(Undeclared):analyze(Prs("int f(){a;} int a = 1;").parse())
       with self.assertRaises(Undeclared):analyze(Prs("int f(){return a;} int a = 1;").parse())
       
+   def test_undeclared_fn(self): 
+      with self.assertRaises(Undeclared):analyze(Prs("int main() { a(); }").parse())
+      analyze(Prs("void a(){}int main() { a(); }").parse()) # assert ok
+
    def test_var_redefinition(self): 
       with self.assertRaises(Redefinition):analyze(Prs("int a; int a;").parse())
       with self.assertRaises(Redefinition):analyze(Prs("void f(){int a; int a;}").parse())
@@ -53,8 +57,15 @@ class TestSem(unittest.TestCase):
       self.assertEqual(str(scopes[0].sym),"a:(int,a0,local)")
       self.assertEqual(str(scopes[1].sym),"a:(int,a1,local)")
 
-   # def test_params():
-   #    pass
+   def test_params(self):
+      ast,_,_ = self.analyze_code("void f(int a,float b){}")
+      scopes = self.filter_scopes(ast)
+      self.assertEqual(str(scopes[0].sym),"a:(int,a0,arg),b:(float,b0,arg)")
+
+   # def test_params(self):
+   #    ast,_,_ = self.analyze_code("void f(int f()){}")
+   #    scopes = self.filter_scopes(ast)
+   #    self.assertEqual(str(scopes[0].sym),"a:(int,a0,arg),b:(float,b0,arg)") 
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

@@ -1,11 +1,9 @@
 from cpy.vst import *
 from cpy.prs import Prs
 from cpy.ast_models import *
-from cpy.sem import *
+import cpy.sem as sem
 import cpy.dbg as dbg
 from collections import OrderedDict
-
-table = OrderedDict()
 
 @dataclass
 class TACLabel: 
@@ -16,81 +14,93 @@ class TACLabel:
 class TACVar:
     id: str
     value: str
-    def __str__(self): return f"  {self.id} = {self.value}"
+    def __str__(self): return f"{self.id} = {self.value}"
+
+@dataclass
+class TACArg:
+    id: str
+    def __str__(self): return f"param {self.id}"
 
 @dataclass
 class TACOp: 
     id: str
-    left: str
+    left: Symbol
     op: str
     right: str
-    def __str__(self): return f"  {self.id} = {self.left} {self.op} {self.right}"
+    def __str__(self): return f"{self.id} = {self.left} {self.op} {self.right}"
 
-def to_operand(node,scope:Scope) -> str:
-    if isinstance(node,Const): return node.value
-    elif isinstance(node,Ref): return scope.sym_for_ref(node.id)[1]
-    elif id(node) in table: return table[id(node)][0]
+@dataclass
+class TACRet: 
+    value: str
+    def __str__(self): return f"return {self.value}"
 
-t = 0
-def generate_id():
-    global t
-    id = f"G{t}" # G for generated
-    t += 1
-    return id
+@dataclass
+class TACCall: 
+    id: str # None if void
+    fn: str
+    def __str__(self): return f"{self.id} = call {self.fn}" if self.id else f"call {self.fn}"
 
-def node_to_tac(node,scope):
-    print(type(node))
-    if isinstance(node,BOp):
-        add_bop(node,scope)
-    elif isinstance(node,Var):
-        value = to_operand(node.value,scope)
-        tac = TACVar(scope.find_ref(node.id)[1],value)
-        table[id(node)] = (tac.id, tac)
+def generate(sem_result):
+    stmts,global_vars,functions = sem_result
+    table = OrderedDict()
+    generated_var_counter = -1
 
-def inspect_scope(scope:Scope):
-    for node in postorder(scope):
-        node_to_tac(node,scope)
+    def find_var(node, scope: Scope):
+        return (scope.find_var(node) or global_vars[node.id]).id
 
-def add_bop(node:BOp,scope:Scope):
-    left = to_operand(node.left,scope)
-    right = to_operand(node.right,scope)
-    tac = TACOp(generate_id(),left,node.op,right)
-    table[id(node)] = (tac.id, tac)
+    def to_operand(node,scope:Scope) -> str:
+        """
+        Returns an appropriate operand for a tac.
+        """
+        if isinstance(node,Const): return node.value
+        elif isinstance(node,Ref): return find_var(node,scope)
+        elif id(node) in table: return table[id(node)].id
 
-def add_fn(fn:Fn):
-    global t 
-    t = 0
-    table[id(fn)] = (fn.id,TACLabel(fn.id))
-    for scope in (n for n,_ in bfs(fn) if isinstance(n,Scope)):
-        inspect_scope(scope)
+    def generate_id():
+        nonlocal generated_var_counter
+        generated_var_counter += 1
+        return f"G{generated_var_counter}" # G for generated
+
+    def process_node(node,scope:Scope):
+        if isinstance(node,BOp): table[id(node)] = TACOp(generate_id(),to_operand(node.left,scope),node.op,to_operand(node.right,scope))
+        elif isinstance(node,Var): table[id(node)] = TACVar(find_var(node,scope),to_operand(node.value,scope))
+        elif isinstance(node,Ret): table[id(node)] = TACRet(to_operand(node.value,scope))
+        elif isinstance(node,Call): add_call(node)
+
+    def add_arg(arg: Arg): 
+        table[id(arg)] = TACArg(arg.id)
+
+    def inspect_scope(scope:Scope):
+        # build tacs in post-order to give lower BOp leaves priority
+        for node in postorder(scope):
+            process_node(node,scope)
+
+    def add_call(node: Call):
+        return_val = None if functions[node.id] == "void" else generate_id()
+        table[id(node)] = TACCall(return_val, table[node.id].id)
+
+    def add_fn(fn:Fn):
+        table[fn.id] = TACLabel(fn.id) # functions can be id'd by their name as sem prevents duplicates
+        for arg in fn.args: 
+            add_arg(arg)
+        for scope in (n for n,_ in bfs(fn) if isinstance(n,Scope)):
+            nonlocal generated_var_counter
+            generated_var_counter = -1
+            inspect_scope(scope)
+
+    for node in (n for n,_ in bfs(stmts) if isinstance(n,Fn)):
+        add_fn(node)
+    return table
 
 if __name__ == "__main__":
     code = """
-        int a() {
-            int a=1;
-            int b=2;
-            return a + b;
-        }
-        int main() { 
-            return a();
-        }
+    int a(int a, int b){}
     """
 
-    code = """
-    int f() { return 1; }
-    int main() { return f(); }
+    """
+    a: 
+        param a
     """
 
-    ast = list(Prs(code).parse())
-
-    dbg.pn(ast)
-    analyze(ast)
-    for node in ast: 
-        if isinstance(node, Fn):
-            add_fn(node)
-            
-    print("\n".join([str(x[1]) for x in table.values()]))
-
-# f:
-#   t0 = 2 * 3
-#   t1 = 1 + t0
+    res = generate(sem.analyze(list(Prs(code).parse())))
+    print("\n".join([str(x) for x in res.values()]))

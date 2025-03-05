@@ -2,7 +2,7 @@ from cpy.ast_models import *
 from cpy.prs import Prs
 from cpy.vst import *
 import cpy.dbg as dbg
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import fields
 
 class GlobalCall(Exception): 
@@ -22,6 +22,8 @@ class GlobalScope(Exception):
 
 def analyze(stmts: list) -> tuple:
     id_counter = defaultdict(int)
+    global_vars = SymbolTable()
+    functions = {}
 
     def add_symbol(node,table:SymbolTable,scope_type:str):
         id = node.id + str(id_counter[node.id])
@@ -34,12 +36,15 @@ def analyze(stmts: list) -> tuple:
         if isinstance(node,Ref): node = [node]
         for child,_ in preorder(node):
             if isinstance(child,Call):
-                pass
+                fn_refs.append(child)
             elif isinstance(child,Ref):
                 var_refs.append(child)
 
-        for ref in [*var_refs,*fn_refs]: 
-            if not scope.sym_for_ref(ref): raise Undeclared(ref.id)
+        for ref in var_refs:
+            if not scope.find_var(ref) and ref.id not in global_vars: raise Undeclared(ref.id)
+
+        for ref in fn_refs:
+            if ref.id not in functions: raise Undeclared(ref.id)
 
     def analyze_scope(scope:Scope,v=0):
         for node in scope.stmts:
@@ -51,10 +56,6 @@ def analyze(stmts: list) -> tuple:
             elif isinstance(node, Var):
                 if node.id in scope.sym: raise Redefinition(node.id)
                 add_symbol(node,scope.sym,"local")
-                # scope.sym.vars[node.id] = get_id(node)
-
-    global_vars = SymbolTable()
-    functions = {}
 
     def add_args_symbols(fn:Fn):
         for arg in fn.args: 
@@ -78,10 +79,10 @@ def analyze(stmts: list) -> tuple:
 
 if __name__ == "__main__":
     code = """
+    int c = 3;
+    void a() { 
+        int b = c * 3;
+    }
     """
-    tree = list(Prs(code).parse())
-    _,globals,fn=analyze(tree)
-    print(globals)
-    # dbg.pn(tree)
-    # print(globals)    
-    # print("\n".join([str(x) for x in globals]))    
+    res = analyze(list(Prs(code).parse()))
+    # print("\n".join([str(x) for x in res.values()]))

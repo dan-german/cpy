@@ -38,13 +38,13 @@ class Prs:
             node.operand = self.uop()
         return node
 
-    def expr(self,left=None,prc=0):
+    def expr(self,left=None,precedence=0):
         def get_precedence(input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
         def next_precedence(): return get_precedence(self.peek())
         def right_associative(op): return op.value in ["=", "+=", "-="]
 
         left = left if left else self.uop()
-        while self.eatable() and next_precedence() >= prc:
+        while self.eatable() and next_precedence() >= precedence:
             op = self.eat(type="OP")
             right = self.uop()
             if self.eatable() and (next_precedence() > get_precedence(op) or right_associative(op)):
@@ -145,8 +145,3 @@ class Prs:
         while self.peek() and self.peek().value != terminal_value: 
             yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
-
-if __name__ == "__main__":
-    code = "{{}}"
-    res = list(Prs(code).parse())
-    pn(res)
