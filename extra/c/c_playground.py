@@ -14,9 +14,12 @@ def dump_llvmir(code):
 
 if __name__ == "__main__":
     code = """
-    int c = 3;
-    void a(int a) { 
+    int m() {
+        int a = 1;
+        int b = 2;
+        int c = a + b;
+        return 4;
     }
-"""
-    # compile_asm(code)
+    """
     dump_llvmir(code)
+    compile_asm(code)

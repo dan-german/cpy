@@ -7,7 +7,7 @@ from cpy.prs import *
 from cpy.ast_models import *
 from dataclasses import fields
 
-IGNORE_TYPES = (int,str,dict,SymbolTable)
+IGNORE_TYPES = (int,str,dict)
 
 def _get_children(node,level:int): 
     if not node: return []

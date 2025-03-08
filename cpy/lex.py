@@ -35,6 +35,5 @@ class Lex:
         self._current = self.temp
         self.temp = next(self.it, None)
         return self._current
-    def prev(self): return self._prev
     def curr(self): return self._current
     def peek(self): return self.temp if self.temp else next(self)

@@ -11,15 +11,6 @@ class Symbol:
     def __str__(self): return f"{self.type},{self.id},{self.scope}"
 
 @dataclass
-class SymbolTable: 
-    symbols: dict[Symbol] = field(default_factory=dict)
-    def __str__(self): return ",".join(f"{k}:({str(v)})" for k,v in self.symbols.items())
-    def __setitem__(self,k,v): self.symbols[k]=v
-    def __getitem__(self,k): return self.symbols[k]
-    def __contains__(self,v): return v in self.symbols
-    def __len__(self): return len(self.symbols)
-
-@dataclass
 class BOp: 
     op: str
     left: "BOp | Const"
@@ -85,7 +76,7 @@ class If:
 class Scope: 
     stmts: list
     parent_scope: "Scope" = field(default=None,metadata={FieldMetadata.TRAVERSABLE:False})
-    sym: SymbolTable = field(default_factory=SymbolTable,metadata={FieldMetadata.TRAVERSABLE:False})
+    sym: dict = field(default_factory=dict,metadata={FieldMetadata.TRAVERSABLE:False})
     def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"
 
     def find_var(self,ref:Ref): 
