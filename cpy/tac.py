@@ -29,7 +29,7 @@ class TACAssign:
     id: str
     value: str
     # def __str__(self): return f"{self.id} = {self.value}"
-    def __str__(self): return f"assign {self.id}, {self.value}"
+    def __str__(self): return f"{self.id} = {self.value}"
 
 @dataclass
 class TACArg:
@@ -39,7 +39,7 @@ class TACArg:
 @dataclass
 class TACOp: 
     id: str
-    left: Symbol
+    left: str
     op: str
     right: str
     def __str__(self): return f"{self.id} = {self.left} {self.op} {self.right}"
@@ -51,9 +51,9 @@ class TACRet:
 
 @dataclass
 class TACCall: 
-    id: str # None if void
     fn: str
-    def __str__(self): return f"{self.id} = call {self.fn}" if self.id else f"call {self.fn}"
+    ret_val_id: str # None if void
+    def __str__(self): return f"{self.ret_val_id} = call {self.fn}" if self.ret_val_id else f"call {self.fn}"
 
 @dataclass
 class TACTable:
@@ -68,7 +68,7 @@ def to_tac(sem_result):
     stmts,global_vars,functions,symbol_table = sem_result
     generated_var_counter = -1
 
-    def find_var(node, scope: Scope): 
+    def find_organic_symobl(node, scope: Scope): 
         return (scope.find_var(node) or global_vars[node.id]).id
 
     def generate_id():
@@ -76,30 +76,34 @@ def to_tac(sem_result):
         generated_var_counter += 1
         return f"G{generated_var_counter}" # G for generated
 
-    def process_node(tac_fn:TACFn,node,scope:Scope):
+    def add_tac(tac_fn:TACFn,node,scope:Scope):
+        tac_id = generate_id()
         if isinstance(node,BOp): 
-            tac_id = generate_id()
-            tac_fn.block.append(TACStore(tac_id))
-            left = tac_fn.ids[id(node.left)]
-            right = tac_fn.ids[id(node.right)]
-
-            tac_fn.block.append(TACLoad(left))
-            tac_fn.block.append(TACLoad(right))
-
+            left,right = tac_fn.ids[id(node.left)],tac_fn.ids[id(node.right)]
             tac_fn.block.append(TACOp(tac_id, left, node.op, right))
-            tac_fn.ids[id(node)] = tac_id
-            symbol_table[tac_id] = ()
+            tac_fn.ids[id(node)] = tac_id 
         elif isinstance(node,Var): 
-            tac_id = find_var(node,scope)
-            tac_fn.block.append(TACStore(tac_id))
+            tac_id = find_organic_symobl(node,scope)
             tac_fn.block.append(TACAssign(tac_id,tac_fn.ids[id(node.value)]))
-            tac_fn.ids[id(node)] = tac_id
+            tac_fn.ids[id(node)] = tac_id 
         elif isinstance(node,Const): 
             tac_id = generate_id()
-            tac_fn.block.append(TACStore(tac_id))
             tac_fn.block.append(TACAssign(tac_id,node.value))
-            tac_fn.ids[id(node)] = tac_id
-            symbol_table
+            tac_fn.ids[id(node)] = tac_id 
+        elif isinstance(node,Ret): 
+            ref = None
+            if isinstance(node.value,(BOp,Const,Call)):
+                ref = tac_fn.ids[id(node.value)]
+            else: 
+                ref = find_organic_symobl(node.value,scope)
+            tac_fn.block.append(TACRet(ref))
+        elif isinstance(node,Call):
+            if functions[node.id] == "void":
+                tac_fn.block.append(TACCall(node.id,None))
+            else:
+                return_value_id = tac_fn.ids[id(node)] = generate_id()
+                tac_fn.block.append(TACCall(node.id,return_value_id))
+                tac_fn.ids[id(node)] = tac_id 
 
     def process_scope(tac_fn,scope:Scope,v=0):
         for node in scope.stmts:
@@ -107,7 +111,7 @@ def to_tac(sem_result):
                 process_scope(tac_fn,node,v)
             else: 
                 for n in postorder(node):
-                    process_node(tac_fn,n,scope)
+                    add_tac(tac_fn,n,scope)
 
     def add_fn(fn:Fn):
         nonlocal generated_var_counter
@@ -120,7 +124,13 @@ def to_tac(sem_result):
     return TACTable([add_fn(node) for node,_ in bfs(stmts) if isinstance(node,Fn)])
 
 if __name__ == "__main__":
-    code = "int a(){int a=1+2;}"
+    code = """
+    int b() {
+        return 2 + 3;
+    }
+    int main(){
+        int a = b();
+    }"""
     ast = list(Prs(code).parse())
     a,b,c,d=sem.analyze(ast) 
     dbg.pn(ast)
@@ -128,10 +138,3 @@ if __name__ == "__main__":
     print(res)
     # print("\n".join([str(x) for x in res.values()]))
 
-
-
-
-        # elif isinstance(node,Ret): tac_fn.block[id(node)] = TACRet(tac_fn.ids[id(node.value)])
-        # elif isinstance(node,Call):
-        #     return_val = None if functions[node.id] == "void" else generate_id()
-        #     tac_fn.block[id(node)] = TACCall(return_val, tac_fn.block[node.id].id)

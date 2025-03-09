@@ -3,25 +3,74 @@ from cpy.prs import Prs
 from cpy.tac import *
 from cpy.dbg import *
 
-def lower(tac: TACTable,sym_table:dict):
-    res = ""
+def lower(tac: TACTable):
+    res = f".global {",".join([f"_{x.id}" for x in tac.functions])}\n"
+    res += ".align 2\n\n"
+
+    alu = { "+": "add", "*": "mul", "-": "sub" }
+    type_to_bytes = { "int": 4 }
+
+    def handle_allocations(fn: TACFn):
+        ids = fn.ids.values()
+        stack_size = 4 * len(ids)
+        contains_call = any([isinstance(tac,TACCall) for tac in fn.block])
+        if contains_call: stack_size += 8
+        address_map = {}
+        counter = 0
+        for id in ids: 
+            address_map[id] = counter
+            counter += type_to_bytes["int"]
+        stack_size = (stack_size + 15) // 16 * 16 # ensure 16 byte alignment
+        return stack_size, address_map
 
     def process_fn(fn: TACFn):
         nonlocal res
         res += f"_{fn.id}:\n"
-        stores = list(filter(lambda x: isinstance(x, TACStore),fn.block))
-        stack_size = 4 * len(stores) # int is 4 bytes
-        res += f"sub sp, sp, #{stack_size}"
-        return res
 
+        ids = fn.ids.values()
+        stack_size, address_map = handle_allocations(fn)
+
+        if stack_size > 0: 
+            res += f"  sub sp, sp, #{stack_size}\n\n"
+
+        for tac in fn.block:
+            if isinstance(tac,TACAssign):
+                if tac.value in ids:
+                    res += f"  ldr w8, [sp, #{address_map[tac.value]}]\n"
+                    res += f"  str w8, [sp, #{address_map[tac.id]}]\n\n"
+                else:
+                    res += f"  mov w8, #{tac.value}\n"
+                    res += f"  str w8, [sp, #{address_map[tac.id]}]\n\n"
+            elif isinstance(tac,TACOp):
+                res += f"  ldr w8, [sp, #{address_map[tac.left]}]\n"
+                res += f"  ldr w9, [sp, #{address_map[tac.right]}]\n"
+                res += f"  {alu[tac.op]} w8, w8, w9\n"
+                res += f"  str w8, [sp, #{address_map[tac.id]}]\n\n"
+            elif isinstance(tac,TACRet):
+                res += f"  ldr w0, [sp, #{address_map[tac.value]}]\n"
+            elif isinstance(tac,TACCall):
+                res += f"  str lr, [sp]\n"
+                res += f"  bl _{tac.fn}\n"
+                res += f"  ldr lr, [sp]\n"
+
+        if stack_size > 0:
+            res += f"\n  add sp, sp, #{stack_size}\n\n"
+
+        res += "  ret\n"
 
     for fn in tac.functions:
-        print(process_fn(fn))
+        process_fn(fn)
+
+    print()
+    return res.strip()
 
 if __name__ == "__main__":
     code = """
-    int a(){
-        int a=1+2;
+    int b() {
+        return 2 + 3;
+    }
+    int main(){
+        int a = b();
     }"""
 
     ast = list(Prs(code).parse())
@@ -29,31 +78,6 @@ if __name__ == "__main__":
     # pn(d)
 
     t = to_tac((a,b,c,sym_table))
-    lower(t,sym_table)
-    # print(str(t))
-
-
-        # sub     sp, sp, #16
-        # mov     w8, #1                          ; =0x1
-        # str     w8, [sp, #12]
-        # mov     w8, #2                          ; =0x2
-        # str     w8, [sp, #8]
-        # ldr     w8, [sp, #12]
-        # ldr     w9, [sp, #8]
-        # add     w8, w8, w9
-        # str     w8, [sp, #4]
-        # ldr     w0, [sp, #4]
-        # add     sp, sp, #16
-        # ret
-
-#a:
-#   store G0
-#   assign G0, 1
-#   store G1
-#   assign G1, 2
-#   store G2
-#   load G0
-#   load G1
-#   G2 = G0 + G1
-#   store a0
-#   assign a0, G2
+    print(t)
+    print()
+    print(lower(t))

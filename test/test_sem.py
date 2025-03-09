@@ -64,10 +64,12 @@ class TestSem(unittest.TestCase):
         self.assertEqual(scopes[1].sym, {"a": Symbol(id="a1", type="int", scope="local")})
 
     def test_all_symbols(self):
-        _, _, _, all_symbols = self.analyze_code("int f(){int a; {int a;}}int a;")
+        _, _, _, all_symbols = self.analyze_code("int f(){int a; {int a;}}int a; int f2(int a){}int f3(){int a=0;}")
         expected = {'a0': Symbol(id='a0', type='int', scope='local'), 
                     'a1': Symbol(id='a1', type='int', scope='local'), 
-                    'a2': Symbol(id='a2', type='int', scope='global')} 
+                    'a2': Symbol(id='a2', type='int', scope='global'), 
+                    'a3': Symbol(id='a3', type='int', scope='arg'), 
+                    'a4': Symbol(id='a4', type='int', scope='local')} 
         self.assertEqual(all_symbols,expected)
 
     def test_params(self):
