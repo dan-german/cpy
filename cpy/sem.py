@@ -15,6 +15,9 @@ class Undeclared(Exception):
 
 class DefUnallowed(Exception): 
     def __init__(self,msg): super().__init__(f"Function definition '{msg}' not allowed here.")
+
+class ArgsMiscount(Exception): 
+    def __init__(self,msg,args:int,given:int): super().__init__(f"Function '{msg}' requires {args} args, while {given} were given")
     
 class GlobalScope(Exception): 
     def __init__(self): super().__init__(f"Global scopes unallowed")
@@ -33,7 +36,12 @@ def analyze(stmts: list) -> tuple:
     def validate_refs(node, scope):
         for child, _ in bfs(node):
             if isinstance(child, Ref) and not (scope.find_var(child) or child.id in global_vars): raise Undeclared(child.id)
-            if isinstance(child, Call) and child.id not in functions: raise Undeclared(child.id)
+            if isinstance(child, Call):
+                if child.id not in functions: raise Undeclared(child.id)
+                callee = functions[child.id]
+                if len(child.args) != len(callee.args): raise ArgsMiscount(child.id,len(callee.args),len(child.args))
+                if len(child.args) > 7 or len(callee.args) > 7: raise Exception("Support stack args")
+                #TODO: type checks and stack args
 
     def analyze_scope(scope:Scope,v=0):
         for node in scope.stmts:
@@ -49,7 +57,7 @@ def analyze(stmts: list) -> tuple:
     for node in stmts:
         if isinstance(node, Fn):
             if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
-            functions[node.id] = node.type
+            functions[node.id] = node
             [add_symbol(arg, node.scope.sym, "arg") for arg in node.args]
             analyze_scope(node.scope)
         elif isinstance(node, Ref) and node.id not in global_vars: raise Undeclared(node.id)

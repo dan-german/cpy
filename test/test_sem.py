@@ -13,10 +13,15 @@ class TestSem(unittest.TestCase):
         with self.assertRaises(Undeclared):analyze(Prs("int f(){return a;} int a = 1;").parse())
       
     def test_undeclared_fn(self): 
-        with self.assertRaises(Undeclared):analyze(Prs("int main() { a(); }").parse())
-        analyze(Prs("void a(){}int main() { a(); }").parse()) # assert ok
+        with self.assertRaises(Undeclared):analyze(Prs("int main(){a();}").parse())
+        analyze(Prs("void a(){}int main(){a();}").parse()) # assert ok
 
-    def test_var_redefinition(self): 
+    def test_args_miscount(self): 
+        with self.assertRaises(ArgsMiscount):analyze(Prs("int a(int a){}void main(){a(1,2);}").parse())
+        with self.assertRaises(ArgsMiscount):analyze(Prs("int a(){}void main(){a(1);}").parse())
+        analyze(Prs("int a(){}void main(){a();}").parse()) # assert ok
+
+    def test_var_redefinition(self):
         with self.assertRaises(Redefinition):analyze(Prs("int a; int a;").parse())
         with self.assertRaises(Redefinition):analyze(Prs("void f(){int a; int a;}").parse())
         with self.assertRaises(Redefinition):analyze(Prs("void f(int a){int a;}").parse())
@@ -37,7 +42,17 @@ class TestSem(unittest.TestCase):
     def filter_scopes(self,ast): return [node for node,_ in bfs(ast) if isinstance(node,Scope)]
 
     def test_functions(self):
-        self.assertEqual(self.analyze_code("void a(){}int b(){}int c(){}")[2],{"a":"void","b":"int","c":"int"})
+        functions = self.analyze_code("void a(){}int b(){}int c(){}")[2]
+        self.assertEqual(len(functions),3)
+        self.assertIn("a",functions)
+        self.assertIn("b",functions)
+        self.assertIn("c",functions)
+        self.assertIsInstance(functions["a"],Fn)
+        self.assertIsInstance(functions["b"],Fn)
+        self.assertIsInstance(functions["c"],Fn)
+        self.assertEqual(functions["a"].type,"void")
+        self.assertEqual(functions["b"].type,"int")
+        self.assertEqual(functions["c"].type,"int")
 
     def test_tables1(self): 
         _, globals_dict,_,_ = self.analyze_code("int a;int b;int c;")
@@ -51,14 +66,14 @@ class TestSem(unittest.TestCase):
     def test_tables2(self): 
         ast, globals_dict, functions,_ = self.analyze_code("int a;int f(){int a;}")
         self.assertEqual(globals_dict, {"a": Symbol(id='a0', type='int', scope='global')})
-        self.assertEqual(functions, {"f": "int"})
+        self.assertIsInstance(functions["f"], Fn)
         scopes = self.filter_scopes(ast)
         self.assertEqual(scopes[0].sym, {"a": Symbol(id="a1", type="int", scope="local")})
 
     def test_tables3(self): 
         ast, globals_dict, functions,_ = self.analyze_code("int f(){int a; {int a;}}int a;")
         self.assertEqual(globals_dict, {"a": Symbol(id="a2", type="int", scope="global")})
-        self.assertEqual(functions, {"f": "int"})
+        self.assertIsInstance(functions["f"], Fn)
         scopes = self.filter_scopes(ast)
         self.assertEqual(scopes[0].sym, {"a": Symbol(id="a0", type="int", scope="local")})
         self.assertEqual(scopes[1].sym, {"a": Symbol(id="a1", type="int", scope="local")})
