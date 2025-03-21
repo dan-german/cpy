@@ -59,8 +59,9 @@ def lower(tac: TACTable):
             res += f"  {mnemonic} w8, w8, w9\n"
             res += f"  str w8, [sp, #{stack_address_map[id]}]\n"
 
-        res += f"  str lr, [sp, #-{stack_size}]!\n"
+        res += f"  str lr, [sp, #-{stack_size}]!\n" # prepare stack and save link register for later
 
+        # load args
         arg_regs = [f"w{x}" for x in range(8)]
         for arg in fn.args: 
             reg = arg_regs.pop(0)
@@ -78,8 +79,8 @@ def lower(tac: TACTable):
             elif isinstance(tac,TACOp): alu(tac.op,tac.left,tac.right,tac.id)
             elif isinstance(tac,TACRet): load("w0",tac.value)
             elif isinstance(tac,TACCall):
+                # set args
                 arg_regs = [f"w{x}" for x in range(8)]
-                print(arg_regs)
                 for arg in tac.args:
                     reg = arg_regs.pop(0)
                     if isinstance(arg,Const):
@@ -122,13 +123,11 @@ _a:
 # TODO: params
 if __name__ == "__main__":
     code = """
-    int b(int a, int c) {return a * 2 * c;}
-    int main() {int sh = 0; b(1,sh);}
-    """
-    code = """
-    int add(int a, int b){ return a + b; }
-    int main() { 
-        return add(1,2);
+    void bp() {}
+    void main(){
+        int x = 2;
+        int x = 
+        bp();
     }
     """
 
@@ -143,18 +142,3 @@ if __name__ == "__main__":
     print("________ASM________")
     print()
     print(asm)
-
-    # f = open("asm_temp.s", "x")
-    # f.write(asm)
-    # f.close()
-
-    # import subprocess
-
-    # # assemble
-    # subprocess.run("as -g -o asm_temp.o asm_temp.s",shell=True)
-    # subprocess.run("ld -o asm_temp asm_temp.o -lSystem -macosx_version_min 14.0 -L $(xcrun --show-sdk-path)/usr/lib -dynamic -arch arm64",shell=True)
-
-    # import os
-    # os.remove("asm_temp.s")
-    # os.remove("asm_temp.o")
-    # os.remove("asm_temp")

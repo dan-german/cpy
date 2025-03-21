@@ -16,16 +16,7 @@ def draw_graph(code):
     dot.render("ast", format="png", view=True) 
 
 if __name__ == '__main__': 
-    code = """
-if 1:
-    pass
-elif 2 and 3: 
-    pass
-elif 3: 
-    pass
-else: 
-    pass"""
-
+    code = "a = 1 + 'c'"
     print_graph(code)
 
 

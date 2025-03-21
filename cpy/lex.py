@@ -31,7 +31,6 @@ class Lex:
             yield next(self)
     def __bool__(self): return self.temp != None
     def __next__(self): 
-        self._prev = self._current
         self._current = self.temp
         self.temp = next(self.it, None)
         return self._current

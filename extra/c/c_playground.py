@@ -16,11 +16,19 @@ def dump_llvmir(code):
 def dump_pp(code): 
     subprocess.run("clang -E -", input=code, shell=True,text=True)
 
+def run(code, output="a.out"):
+    subprocess.run(["clang", "-x", "c", "-", "-o", output], input=code, text=True, check=True)
+    subprocess.run(["./" + output], check=True)
+
 if __name__ == "__main__":
-    code = """
-    int b(int a, int c) {return a * 2 * c;}
-    int main() {int sh = 4; b(1,sh);}
+    code = r"""
+    #include <stdio.h>
+    char globalString[] = "Hello, World!";
+    int main() { 
+        printf("String: %s\n", globalString);
+    }
     """
-    # dump_llvmir(code)
-    compile_asm(code)
+    # run(code)
+    dump_llvmir(code)
+    # compile_asm(code)
     # dump_pp(code)
