@@ -3,11 +3,12 @@ from cpy.prs import Prs
 from cpy.tac import *
 from cpy.dbg import *
 
-def lower(tac: TACTable):
+def lower(tac: TACTable,debug=False):
     res = f".global {",".join([f"_{x.id}" for x in tac.functions])}\n"
     res += ".align 2\n\n"
 
-    alu = {"+":"add","*":"mul","-":"sub"}
+    if debug: tac.functions.append(TACFn("DBG"))
+
     type_to_bytes = { "int": 4 }
 
     def handle_allocations(fn: TACFn):
@@ -91,6 +92,7 @@ def lower(tac: TACTable):
                 if tac.return_value_id:
                     store("w0",tac.return_value_id)
 
+        if debug and fn.id == "main": res += "  bl _DBG\n"
         res += f"  ldr lr, [sp]\n"
         res += f"\n  add sp, sp, #{stack_size}\n\n"
         res += "  ret\n"
@@ -126,7 +128,7 @@ if __name__ == "__main__":
     void bp() {}
     void main(){
         int x = 2;
-        int x = 
+        int a = x * x;
         bp();
     }
     """
@@ -138,7 +140,6 @@ if __name__ == "__main__":
     t = to_tac((a,b,c,sym_table))
     print(t)
     print()
-    asm = lower(t)
-    print("________ASM________")
+    asm = lower(t,True)
     print()
     print(asm)

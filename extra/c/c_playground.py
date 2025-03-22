@@ -25,7 +25,8 @@ if __name__ == "__main__":
     #include <stdio.h>
     char globalString[] = "Hello, World!";
     int main() { 
-        printf("String: %s\n", globalString);
+        int x = 0;
+        //printf("String: %s\n", globalString);
     }
     """
     # run(code)
