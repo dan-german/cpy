@@ -1,7 +1,5 @@
 import unittest
 from cpy import Prs
-from cpy.lex import Tok
-from cpy.dbg import pn
 
 class TestPrs(unittest.TestCase):
     def to_str(self, input, fn = Prs.stmnt) -> str: return str(fn(Prs(input)))

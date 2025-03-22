@@ -101,28 +101,6 @@ def lower(tac: TACTable,debug=False):
         process_fn(fn)
     return res.strip()
 
-"""
-_b:                        
-        sub     sp, sp, #16
-
-        str     w0, [sp, #12]
-        ldr     w8, [sp, #12]
-        lsl     w0, w8, #1
-        add     sp, sp, #16
-        ret
-_a:     
-        sub     sp, sp, #32
-        stp     x29, x30, [sp, #16]             ; 16-byte Folded Spill
-        add     x29, sp, #16
-        mov     w0, #1                          ; =0x1
-        bl      _b
-        ldur    w0, [x29, #-4]
-        ldp     x29, x30, [sp, #16]             ; 16-byte Folded Reload
-        add     sp, sp, #32
-        ret
-"""
-
-# TODO: params
 if __name__ == "__main__":
     code = """
     void bp() {}
