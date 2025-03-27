@@ -12,7 +12,12 @@ class TestLex(unittest.TestCase):
         self.assert_lex(code="a aa a1 aa11", expected=["ID a", "ID aa", "ID a1", "ID aa11"])
         self.assert_lex(code=r'"a" "\"" "\n"', expected=[r'STR "a"', r'STR "\""', r'STR "\n"'])
         self.assert_lex(code="){,;", expected=["PUNCTUATION )", "PUNCTUATION {", "PUNCTUATION ,", "PUNCTUATION ;"])
-        self.assert_lex(code="< > >= <= <<= >>= ^", expected=[ "OP <", "OP >", "OP >=", "OP <=", "OP <<=", "OP >>=", "OP ^"])
+
+        self.assert_lex(code="< > <<= >>= ^", expected=["OP <", "OP >", "OP <<=", "OP >>=", "OP ^"])
+        self.assert_lex(code="== != >= <=", expected=["OP ==", "OP !=", "OP >=", "OP <="])
+        self.assert_lex(code="* &", expected=[ "OP *", "OP &"])
+        self.assert_lex(code="+= -= *= /=", expected=["OP +=", "OP -=", "OP *=", "OP /="])
+
         self.assert_lex(code= "'a' 'b'", expected=["CHAR 'a'", "CHAR 'b'"])
         self.assert_lex(code= "//comment", expected=["COMMENT //comment"])
 

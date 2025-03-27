@@ -18,6 +18,23 @@ class TACStore:
     id: str
     def __str__(self): return f"store {self.id}"
 
+@dataclass
+class TACGoto:
+    label: str
+    def __str__(self): return f"goto {self.label}"
+
+@dataclass
+class TACLabel: 
+    label: str
+    def __str__(self): return f"{self.label}:"
+
+@dataclass 
+class TACIf:
+    value: str
+    label: str
+    def __str__(self): return f"if {self.value} goto {self.label}"
+    # def __str__(self): return f"if {self.left} {self.op} {self.right}"
+
 @dataclass 
 class TACLoad:
     id: str
@@ -99,6 +116,11 @@ def to_tac(sem_result):
             left,right = find_existing_tac_id(tac_fn,node.left),find_existing_tac_id(tac_fn,node.right)
             tac_fn.block.append(TACOp(new_tac_id, left, node.op, right))
             tac_fn.ids[id(node)] = new_tac_id 
+        # elif isinstance(node,If): 
+        #     left = find_existing_tac_id(tac_fn,node.test.left)
+        #     right = find_existing_tac_id(tac_fn,node.test.right)
+        #     tac_fn.block.append(TACIf(left,node.test.op,right))
+        #     pass
         elif isinstance(node,Var): 
             new_tac_id = get_symbol(node,scope)
             tac_ref = None
@@ -107,7 +129,6 @@ def to_tac(sem_result):
             else:
                 tac_ref = TACRef(tac_fn.ids[id(node.value)])
             tac_fn.block.append(TACAssign(new_tac_id,tac_ref))
-            # tac_fn.ids[id(node)] = new_tac_id 
             tac_fn.ids[node.id] = new_tac_id
         elif isinstance(node,Const): 
             new_tac_id = generate_id()
@@ -139,11 +160,30 @@ def to_tac(sem_result):
                 return_value_id = tac_fn.ids[id(node)] = new_tac_id
                 tac_fn.block.append(TACCall(node.id,args,return_value_id))
                 tac_fn.ids[id(node)] = new_tac_id 
-
     def process_scope(tac_fn,scope:Scope,v=0):
+        if_counter = 0
         for node in scope.stmts:
             if isinstance(node, Scope):
                 process_scope(tac_fn,node,v)
+            elif isinstance(node, If):
+                if_counter += 1
+
+                for n in postorder(node.test):
+                    add_tac(tac_fn,n,scope)
+                tac_fn.block.append(TACIf(find_existing_tac_id(tac_fn,node.test), f"then_{if_counter}"))
+                tac_fn.block.append(TACGoto(f"else_{if_counter}"))
+                tac_fn.block.append(TACLabel(f"then_{if_counter}"))
+
+                for n in postorder(node.else_):
+                    add_tac(tac_fn,n,scope)
+                tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
+                tac_fn.block.append(TACLabel(f"else_{if_counter}"))
+
+                for n in postorder(node.body.stmts):
+                    add_tac(tac_fn,n,scope)
+                tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
+                tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
+                continue
             else: 
                 for n in postorder(node):
                     add_tac(tac_fn,n,scope)
@@ -166,14 +206,14 @@ def to_tac(sem_result):
     return TACTable(tac_fns,tac_globals)
 
 if __name__ == "__main__":
-    code = """\
-    int a() { return 1; }
-    int f() {
-        int x = 2;
-        int b = x*x;
-        return a();
-    }"""
-
+    code =\
+    """
+    int main() { 
+        int x = 0;
+        if (1 == 2) { x = 1; } else { x = 2; }
+        return x;
+    }
+    """
     ast = list(Prs(code).parse())
     a,b,c,d=sem.analyze(ast) 
     dbg.pn(ast)

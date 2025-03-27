@@ -23,13 +23,41 @@ def run(code, output="a.out"):
 if __name__ == "__main__":
     code = r"""
     #include <stdio.h>
-    char globalString[] = "Hello, World!";
     int main() { 
-        int x = 0;
-        //printf("String: %s\n", globalString);
+        int x = 2;
+        if (x == 2) { x *= 8; }
+        return x;
     }
     """
     # run(code)
-    dump_llvmir(code)
-    # compile_asm(code)
+    # dump_llvmir(code)
+    compile_asm(code)
     # dump_pp(code)
+
+
+
+
+#             .section        __TEXT,__text,regular,pure_instructions
+#         .build_version macos, 15, 0     sdk_version 15, 2
+#         .globl  _main                           ; -- Begin function main
+#         .p2align        2
+# _main:                                  ; @main
+# ; %bb.0:
+#         sub     sp, sp, #16
+#         str     wzr, [sp, #12]
+#         mov     w8, #2                          ; =0x2
+#         str     w8, [sp, #8]
+#         ldr     w8, [sp, #8]
+#         subs    w8, w8, #2
+#         cset    w8, ne
+#         tbnz    w8, #0, LBB0_2
+#         b       LBB0_1
+# LBB0_1:
+#         ldr     w8, [sp, #8]
+#         lsl     w8, w8, #3
+#         str     w8, [sp, #8]
+#         b       LBB0_2
+# LBB0_2:
+#         ldr     w0, [sp, #8]
+#         add     sp, sp, #16
+#         ret

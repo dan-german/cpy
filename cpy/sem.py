@@ -30,6 +30,7 @@ def analyze(stmts: list) -> tuple:
 
     def add_symbol(node,table:dict,scope_type:str):
         id = node.id + str(id_counter[node.id])
+        if node.id == "G": id = f"_{node.id}"
         id_counter[node.id] += 1
         table[node.id] = all_symbols[id] = Symbol(id,node.type,scope_type)
 

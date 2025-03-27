@@ -50,10 +50,13 @@ class TestPrs(unittest.TestCase):
 
     def test_if(self): 
         self.assertEqual(self.to_str("if(1){}"), "If(test=Const(1),body=Scope([]),else=None)")
+        self.assertEqual(self.to_str("if(x){}"), "If(test=Ref(x),body=Scope([]),else=None)")
+        self.assertEqual(self.to_str("if(9==x){}"), "If(test=BOp(Const(9)==Ref(x)),body=Scope([]),else=None)")
         self.assertEqual(self.to_str("if(1){}else{}"), "If(test=Const(1),body=Scope([]),else=Scope([]))")
         self.assertEqual(self.to_str("if(1){}else{return 1;}"), "If(test=Const(1),body=Scope([]),else=Scope([Ret(Const(1))]))")
         self.assertEqual(self.to_str("if(1){}else if(2){}"), "If(test=Const(1),body=Scope([]),else=If(test=Const(2),body=Scope([]),else=None))")
         self.assertEqual(self.to_str("if(1){}else if(2){}else if(3){}"), "If(test=Const(1),body=Scope([]),else=If(test=Const(2),body=Scope([]),else=If(test=Const(3),body=Scope([]),else=None)))")
+        self.assertEqual(self.to_str("if(x==1){}else if(y!=2){}else if(2==x){}"), "If(test=BOp(Ref(x)==Const(1)),body=Scope([]),else=If(test=BOp(Ref(y)!=Const(2)),body=Scope([]),else=If(test=BOp(Const(2)==Ref(x)),body=Scope([]),else=None)))")
     
     def test_scopes(self):
         self.assertEqual(self.to_str("{}"), "Scope([])") 

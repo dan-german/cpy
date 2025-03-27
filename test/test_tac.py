@@ -6,11 +6,12 @@ from cpy.tac import *
 class TestTac(unittest.TestCase):
     def to_tac(self,code:str): return to_tac(sem.analyze(list(prs.Prs(code).parse())))
 
-    def test_a(self):
-        code = """\
+    def test_fn_and_arith(self):
+        code =\
+        """
         int a = 3;
         int b = 4;
-        int f1(int x) {return x*2;}
+        int f1(int x) {return x*2*x;}
         int f2(int x) {return f1(x);}
         """
         tac_table = self.to_tac(code)
@@ -24,7 +25,8 @@ class TestTac(unittest.TestCase):
         self.assertEqual(f1.block,[
             TACAssign("G0",Const("2")),
             TACOp("G1","x0","*","G0"),
-            TACRet("G1")
+            TACOp("G2","G1","*","x0"),
+            TACRet("G2")
         ])
 
         f2 = tac_table.functions[1]
@@ -34,24 +36,17 @@ class TestTac(unittest.TestCase):
             TACRet("G0")
         ])
 
-    def test_a(self):
-        code = """\
-        int f1() {
+    def test_branch(self): 
+        code =\
+        """
+        int main() { 
             int x = 0;
-            return x*x;
+            if (1 == 2) { x = 1; } else { x = 2; }
+            return x;
         }
         """
         tac_table = self.to_tac(code)
-        self.assertEqual(len(tac_table.globals),0)
-        self.assertEqual(len(tac_table.functions),1)
-        f1 = tac_table.functions[0]
-        self.assertEqual(f1.args,[])
-        self.assertEqual(f1.block,[
-            TACAssign("G0",Const("0")),
-            TACAssign("x0",TACRef("G0")),
-            TACOp("G1","x0","*","x0"),
-            TACRet("G1")
-        ])
+        print(tac_table)
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

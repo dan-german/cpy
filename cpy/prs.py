@@ -4,7 +4,7 @@ from cpy.dbg import *
 
 UOPS = { "++", "--", "+", "-", "*", "&" }
 PREC_MAP = { 
-    "=": 1, "+=": 1, "-=": 1,
+    "=": 1, "+=": 1, "-=": 1, "*=": 1, "==": 1, ">=": 1, "<=": 1, "!=": 1,
     "+": 3, "-": 3, "*": 4,
     "/": 4,
     "++": 5, "--": 5
@@ -97,7 +97,7 @@ class Prs:
         return r
 
     def id_(self): 
-        def is_assignment(): return self.peek().value in ["=", "+=", "-="] 
+        def is_assignment(): return self.peek().value in ["=", "+=", "-=", "*="] 
         id = self.eat(type="ID").value
         if self.peek() and self.peek().value == "(":
             call = self.call(id)
@@ -134,14 +134,28 @@ class Prs:
     def stmnt(self):
         def is_type(st: str): return st in ["int", "float", "void"]
         while self.eatable():
-            if is_type(self.peek().value): return self.decl()
-            elif self.peek().value == "return": return self.ret()
-            elif self.peek().type == "ID": return self.id_()
-            elif self.peek().value == "if": return self.if_()
-            elif self.peek().value == "{": return self.scope()
+            if is_type(self.peek().value): 
+                return self.decl()
+            elif self.peek().value == "return": 
+                return self.ret()
+            elif self.peek().type == "ID": 
+                return self.id_()
+            elif self.peek().value == "if": 
+                return self.if_()
+            elif self.peek().value == "{": 
+                return self.scope()
             return self.expr()
 
     def parse(self, terminal_value: str = None): 
         while self.peek() and self.peek().value != terminal_value: 
             yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
+
+if __name__ == "__main__":
+    code =\
+    """
+    x >= 1;
+    """
+    # code = "x *= 2;"
+    res = list(Prs(code).parse())
+    print(res)
