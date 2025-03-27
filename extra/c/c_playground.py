@@ -22,19 +22,13 @@ def run(code, output="a.out"):
 
 if __name__ == "__main__":
     code = r"""
-    #include <stdio.h>
-    int main() { 
-        int x = 2;
-        if (x == 2) { x *= 8; }
-        return x;
+    int main() {
     }
     """
     # run(code)
-    # dump_llvmir(code)
-    compile_asm(code)
+    dump_llvmir(code)
+    # compile_asm(code)
     # dump_pp(code)
-
-
 
 
 #             .section        __TEXT,__text,regular,pure_instructions

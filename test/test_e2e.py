@@ -1,10 +1,10 @@
 import unittest
-import cpy.cpy as cpy
+import cpy.compiler as compiler
 import subprocess
 import random
 
 def debug(code:str):
-    arm64 = cpy.compile(code,debug=True)
+    arm64 = compiler.compile(code,debug=True)
     args = ["clang", "-x", "assembler","-"]
     subprocess.run(args, input=arm64, text=True)
     # This places a breakpoint at DBG label and prints out x0's content to stdout
@@ -13,7 +13,6 @@ def debug(code:str):
     return int(output.stdout.split()[0])
 
 class TestE2E(unittest.TestCase): # TODO - make fast
-
     def test_return_value_sanity(self):
         for i in range(0, 2**32, 2**29):
             self.assertEqual(i, int(debug(f"int main(){{return {i};}}")))
@@ -32,6 +31,18 @@ class TestE2E(unittest.TestCase): # TODO - make fast
             # TODO - add division
             # x = random.randint(0,max_operand)
             # self.assertEqual(x//x, int(self.run_code(f"int main(){{return {x}/{x};}}")))
+
+    def test_reassignment(self): 
+        code = """
+        int main() { 
+            int x = 0;
+            x = 2;
+            int y = x;
+            y = x;
+            return x + y;
+        }
+        """
+        self.assertEqual(int(debug(code)),4)
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

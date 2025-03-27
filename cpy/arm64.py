@@ -11,7 +11,7 @@ def lower(tac: TACTable,debug=False):
 
     type_to_bytes = { "int": 4 }
 
-    def handle_allocations(fn: TACFn):
+    def prepare_prologue(fn: TACFn):
         ids = fn.ids.values()
         stack_size = 4 * len(ids) + 8 # 8 for link register
         contains_call = any([isinstance(tac,TACCall) for tac in fn.block])
@@ -29,8 +29,7 @@ def lower(tac: TACTable,debug=False):
         nonlocal res
         res += f"_{fn.id}:\n"
 
-        ids = fn.ids.values()
-        stack_size, stack_address_map = handle_allocations(fn)
+        stack_size, stack_address_map = prepare_prologue(fn)
         print(f"stack size: {stack_size}")
         indent = " "*2
         
@@ -103,11 +102,9 @@ def lower(tac: TACTable,debug=False):
 
 if __name__ == "__main__":
     code = """
-    void bp() {}
-    void main(){
-        int x = 2;
-        int a = x * x;
-        bp();
+    int main() { 
+        int x = 0;
+        x = 2;
     }
     """
 

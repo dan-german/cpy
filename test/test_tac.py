@@ -36,6 +36,30 @@ class TestTac(unittest.TestCase):
             TACRet("G0")
         ])
 
+    def test_reassignment(self): 
+        code =\
+        """
+        int main() { 
+            int x = 0;
+            x = 2;
+            int y = x;
+            y = x;
+            return x + y;
+        }
+        """
+        tac_table = self.to_tac(code)
+        main = tac_table.functions[0]
+        self.assertEqual(main.block, [
+            TACAssign("G0",Const("0")),
+            TACAssign("x0",TACRef("G0")),
+            TACAssign("G1",Const("2")),
+            TACAssign("x0",TACRef("G1")),
+            TACAssign("y0",TACRef("x0")),
+            TACAssign("y0",TACRef("x0")),
+            TACOp("G2", "x0", "+", "y0"),
+            TACRet("G2")
+        ])
+
     def test_branch(self): 
         code =\
         """
