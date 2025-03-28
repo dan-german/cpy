@@ -59,6 +59,6 @@ print(debug(code))  # Outputs: 6
 ## Features  
 
 ✅ Functions
-✅ Integer arithmetic  
+✅ Integer arithmetic 
 🟨 Some conditional branching
 🔜 More features coming soon!  
