@@ -23,25 +23,16 @@ print(compile(code))
 
 _main:
     str lr, [sp, #-32]!
-
-    // G0 = Const(2)
     mov w8, #2
-    str w8, [sp, #4]  // store G0
-
-    // G1 = Const(3)
+    str w8, [sp, #4]
     mov w8, #3
-    str w8, [sp, #8]  // store G1
-
-    // G2 = G0 * G1
-    ldr w8, [sp, #4]  // load G0
-    ldr w9, [sp, #8]  // load G1
+    str w8, [sp, #8]
+    ldr w8, [sp, #4]
+    ldr w9, [sp, #8]
     mul w8, w8, w9
-    str w8, [sp, #12] // store G2
-
-    // return G2
-    ldr w0, [sp, #12] // load G2
+    str w8, [sp, #12]
+    ldr w0, [sp, #12]
     ldr lr, [sp]
-
     add sp, sp, #32
     ret
 ```
