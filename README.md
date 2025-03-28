@@ -58,8 +58,7 @@ print(debug(code))  # Outputs: 6
 
 ## Features  
 
-✅ Stack-based loads and stores  
+✅ Functions
 ✅ Integer arithmetic  
-✅ Function prologue/epilogue  
+🟨 Some conditional branching
 🔜 More features coming soon!  
-
