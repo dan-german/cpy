@@ -23,11 +23,17 @@ def run(code, output="a.out"):
 if __name__ == "__main__":
     code = r"""
     int main() {
+        volatile int x = 2;
+        if (x > 2 > 1) { 
+            return 444;
+        }
+        return 999;
     }
     """
+    # dump_ast(code)
     # run(code)
-    dump_llvmir(code)
-    # compile_asm(code)
+    # dump_llvmir(code)
+    compile_asm(code)
     # dump_pp(code)
 
 

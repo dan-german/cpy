@@ -11,6 +11,7 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("-+9", Prs.expr), "UOp(-UOp(+Const(9)))")
     
     def test_bop(self):
+        # arithmetic
         self.assertEqual(self.to_str("a+b", Prs.expr), "BOp(Ref(a)+Ref(b))")
         self.assertEqual(self.to_str("1+2", Prs.expr), "BOp(Const(1)+Const(2))")
         self.assertEqual(self.to_str("(1+2)", Prs.expr), "BOp(Const(1)+Const(2))")
@@ -25,6 +26,8 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("a=b=c;"), "BOp(Ref(a)=BOp(Ref(b)=Ref(c)))")
         self.assertEqual(self.to_str("a+=a+=3;"), "BOp(Ref(a)+=BOp(Ref(a)+=Const(3)))")
         self.assertEqual(self.to_str("c-=c-=33;"), "BOp(Ref(c)-=BOp(Ref(c)-=Const(33)))")
+        # boolean logic
+        self.assertEqual(self.to_str("a=b=c;"), "BOp(Ref(a)=BOp(Ref(b)=Ref(c)))")
     
     def test_variable(self):
         self.assertEqual(self.to_str("int a=*b;"), "Var(type=int,id=a,value=UOp(*Ref(b)))")

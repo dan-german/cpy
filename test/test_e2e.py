@@ -44,5 +44,15 @@ class TestE2E(unittest.TestCase): # TODO - make fast
         """
         self.assertEqual(int(debug(code)),4)
 
+    def test_if_statement(self):
+        def run_condition(condition:str,ret_value_then:int, ret_value_else:int):
+            code=f"""int main(){{if({condition}){{return {ret_value_then};}}return {ret_value_else};}}"""
+            return int(debug(code))
+        self.assertEqual(run_condition("1==1", 1, 2), 1) 
+        self.assertEqual(run_condition("1!=1", 1, 2), 2) 
+        self.assertEqual(run_condition("1<1", 1, 2), 2) 
+        self.assertEqual(run_condition("1<=1", 1, 2), 1) 
+        # self.assertEqual(run_condition("3>2>1", 1, 2), 1) TODO: make work
+
 if __name__ == "__main__":
   unittest.main(verbosity=1)

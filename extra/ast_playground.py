@@ -16,7 +16,8 @@ def draw_graph(code):
     dot.render("ast", format="png", view=True) 
 
 if __name__ == '__main__': 
-    code = "a += b"
+    code = "a and b or c"
+    # code = "a + b + c"
     print_graph(code)
 
 

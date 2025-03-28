@@ -3,6 +3,8 @@ from cpy.prs import Prs
 from cpy.tac import *
 from cpy.dbg import *
 
+cmp_mnemonics = {"==": "beq", "!=": "bne", ">": "bgt", ">=": "bge", "<": "blt", "<=": "ble"}
+
 def lower(tac: TACTable,debug=False):
     res = f".global {",".join([f"_{x.id}" for x in tac.functions])}\n"
     res += ".align 2\n\n"
@@ -50,14 +52,25 @@ def lower(tac: TACTable,debug=False):
         def comment(msg:str):
             nonlocal res
             res += f"\n{indent}// {msg}\n\n"
+        
+        def ret(): 
+            nonlocal res
+            if debug and fn.id == "main": res += "  bl _DBG\n"
+            res += f"  ldr lr, [sp]\n"
+            res += f"\n  add sp, sp, #{stack_size}\n\n"
+            res += "  ret\n"
 
         def alu(op:str,left,right,id):
             nonlocal res
             load("w8", left)
             load("w9", right)
-            mnemonic = {"+":"add","*":"mul","-":"sub"}[op]
-            res += f"  {mnemonic} w8, w8, w9\n"
-            res += f"  str w8, [sp, #{stack_address_map[id]}]\n"
+
+            if op in cmp_mnemonics:
+                res += f"  cmp w8, w9"
+            else:
+                mnemonic = {"+":"add","*":"mul","-":"sub"}[op]
+                res += f"  {mnemonic} w8, w8, w9\n"
+                res += f"  str w8, [sp, #{stack_address_map[id]}]\n"
 
         res += f"  str lr, [sp, #-{stack_size}]!\n" # prepare stack and save link register for later
 
@@ -69,32 +82,39 @@ def lower(tac: TACTable,debug=False):
 
         for tac in fn.block:
             comment(str(tac))
-            if isinstance(tac,TACAssign):
-                if isinstance(tac.value, TACRef): 
-                    load("w8",tac.value.id)
-                    store("w8",tac.id)
-                elif isinstance(tac.value, Const): 
-                    move("w8",tac.value.value)
-                    store("w8",tac.id)
-            elif isinstance(tac,TACOp): alu(tac.op,tac.left,tac.right,tac.id)
-            elif isinstance(tac,TACRet): load("w0",tac.value)
-            elif isinstance(tac,TACCall):
-                # set args
-                arg_regs = [f"w{x}" for x in range(8)]
-                for arg in tac.args:
-                    reg = arg_regs.pop(0)
-                    if isinstance(arg,Const):
-                        res += f"  mov {reg}, #{arg.value}; set arg {arg.value}\n"
-                    else:
-                        res += f"  mov {reg}, [sp,#{stack_address_map[arg.id]}]; set arg {arg.id}\n"
-                res += f"  bl _{tac.fn}\n"
-                if tac.return_value_id:
-                    store("w0",tac.return_value_id)
+            print(tac)
+            match tac:
+                case TACLabel(label=label):
+                    res += f"  {label}:"
+                case TACGoto(label=label):
+                    res += f"  b {label}"
+                case TACIf(value=_,label=label,last_test_op=op):
+                    print("last", op)
+                    res += f"  {cmp_mnemonics[op]} {label}"
+                case TACAssign(value=TACRef(id=ref_id)):
+                    load("w8", ref_id)
+                    store("w8", tac.id)
+                case TACAssign(value=Const(value=const_val)):
+                    move("w8", const_val)
+                    store("w8", tac.id)
+                case TACOp(op=op, left=left, right=right, id=res_id):
+                    alu(op, left, right, res_id)
+                case TACRet(value=ret_val):
+                    load("w0", ret_val)
+                    ret()
+                case TACCall(fn=fn_name, args=args, return_value_id=ret_id):
+                    arg_regs = [f"w{x}" for x in range(8)]
+                    for arg in args:
+                        reg = arg_regs.pop(0)
+                        if isinstance(arg, Const):
+                            res += f"  mov {reg}, #{arg.value}; set arg {arg.value}\n"
+                        else:
+                            res += f"  mov {reg}, [sp,#{stack_address_map[arg.id]}]; set arg {arg.id}\n"
+                    res += f"  bl _{fn_name}\n"
+                    if ret_id:
+                        store("w0", ret_id)
 
-        if debug and fn.id == "main": res += "  bl _DBG\n"
-        res += f"  ldr lr, [sp]\n"
-        res += f"\n  add sp, sp, #{stack_size}\n\n"
-        res += "  ret\n"
+        ret()
 
     for fn in tac.functions:
         process_fn(fn)
@@ -103,18 +123,15 @@ def lower(tac: TACTable,debug=False):
 if __name__ == "__main__":
     code = """
     int main() { 
-        int x = 0;
-        x = 2;
+        if (3>2>1) { return 1; }
+        return 2;
     }
     """
-
     ast = list(Prs(code).parse())
     a,b,c,sym_table=sem.analyze(ast)
-    # pn(d)
-
     t = to_tac((a,b,c,sym_table))
-    print(t)
-    print()
+    # print(t)
+    # print()
     asm = lower(t,True)
-    print()
+    # print()
     print(asm)

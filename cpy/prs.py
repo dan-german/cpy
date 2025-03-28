@@ -4,7 +4,7 @@ from cpy.dbg import *
 
 UOPS = { "++", "--", "+", "-", "*", "&" }
 PREC_MAP = { 
-    "=": 1, "+=": 1, "-=": 1, "*=": 1, "==": 1, ">=": 1, "<=": 1, "!=": 1,
+    "=": 1, "+=": 1, "-=": 1, "*=": 1, "==": 1, ">=": 1, "<=": 1, "!=": 1, "<": 1, ">": 1,
     "+": 3, "-": 3, "*": 4,
     "/": 4,
     "++": 5, "--": 5
@@ -132,18 +132,14 @@ class Prs:
         return Scope(list(self.parse("}")))
 
     def stmnt(self):
-        def is_type(st: str): return st in ["int", "float", "void"]
+        def is_type(st: str): return st in {"int", "float", "void"}
         while self.eatable():
-            if is_type(self.peek().value): 
-                return self.decl()
-            elif self.peek().value == "return": 
-                return self.ret()
-            elif self.peek().type == "ID": 
-                return self.id_()
-            elif self.peek().value == "if": 
-                return self.if_()
-            elif self.peek().value == "{": 
-                return self.scope()
+            match self.peek():
+                case token if is_type(token.value): return self.decl()
+                case token if token.value == "return": return self.ret()
+                case token if token.type == "ID": return self.id_()
+                case token if token.value == "if": return self.if_()
+                case token if token.value == "{": return self.scope()
             return self.expr()
 
     def parse(self, terminal_value: str = None): 
@@ -154,8 +150,10 @@ class Prs:
 if __name__ == "__main__":
     code =\
     """
-    x >= 1;
+    if (true) {}
     """
-    # code = "x *= 2;"
     res = list(Prs(code).parse())
+    import dbg
+    dbg.pn(res)
+    
     print(res)
