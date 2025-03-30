@@ -121,9 +121,10 @@ def lower(tac: TACTable,debug=False):
     return res.strip()
 
 if __name__ == "__main__":
+        # if (3>2>1) { return 1; }
     code = """
     int main() { 
-        if (3>2>1) { return 1; }
+    int x = 
         return 2;
     }
     """

@@ -23,10 +23,9 @@ class TestTac(unittest.TestCase):
         f1 = tac_table.functions[0]
         self.assertEqual(f1.args,[TACArg("int", "x0")])
         self.assertEqual(f1.block,[
-            TACAssign("G0",Const("2")),
-            TACOp("G1","x0","*","G0"),
-            TACOp("G2","G1","*","x0"),
-            TACRet("G2")
+           TACOp(id='G0', left='x0', op='*', right=Const(value='2')),
+           TACOp(id='G1', left='G0', op='*', right='x0'),
+           TACRet(value='G1')
         ])
 
         f2 = tac_table.functions[1]
@@ -50,14 +49,12 @@ class TestTac(unittest.TestCase):
         tac_table = self.to_tac(code)
         main = tac_table.functions[0]
         self.assertEqual(main.block, [
-            TACAssign("G0",Const("0")),
-            TACAssign("x0",TACRef("G0")),
-            TACAssign("G1",Const("2")),
-            TACAssign("x0",TACRef("G1")),
-            TACAssign("y0",TACRef("x0")),
-            TACAssign("y0",TACRef("x0")),
-            TACOp("G2", "x0", "+", "y0"),
-            TACRet("G2")
+            TACAssign(id='x0', value=Const(value='0')),
+            TACAssign(id='x0', value=TACRef(id=Const(value='2'))),
+            TACAssign(id='y0', value=TACRef(id='x0')),
+            TACAssign(id='y0', value=TACRef(id='x0')),
+            TACOp(id='G0', left='x0', op='+', right='y0'),
+            TACRet(value='G0')
         ])
 
     def test_branch(self): 
