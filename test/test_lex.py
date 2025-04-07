@@ -14,7 +14,7 @@ class TestLex(unittest.TestCase):
         self.assert_lex(code="){,;", expected=["PUNCTUATION )", "PUNCTUATION {", "PUNCTUATION ,", "PUNCTUATION ;"])
 
         self.assert_lex(code="< > <<= >>= ^", expected=["OP <", "OP >", "OP <<=", "OP >>=", "OP ^"])
-        self.assert_lex(code="== != >= <=", expected=["OP ==", "OP !=", "OP >=", "OP <="])
+        self.assert_lex(code="== != >= <= && ||", expected=["OP ==", "OP !=", "OP >=", "OP <=", "OP &&", "OP ||"])
         self.assert_lex(code="* &", expected=[ "OP *", "OP &"])
         self.assert_lex(code="+= -= *= /=", expected=["OP +=", "OP -=", "OP *=", "OP /="])
 

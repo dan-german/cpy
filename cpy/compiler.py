@@ -4,7 +4,7 @@ import cpy.tac as tac
 import cpy.arm64 as arm64
 
 def compile(code:str,*,debug=False) -> str: 
-    statements = list(Prs(code).parse())
-    a,b,c,d = sem.analyze(statements)
+    ast = list(Prs(code).parse())
+    a,b,c,d = sem.analyze(ast)
     tac_table = tac.to_tac((a,b,c,d))
     return arm64.lower(tac_table,debug)

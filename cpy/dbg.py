@@ -20,7 +20,7 @@ def get_colored(instance, args="",suffix=""):
     color = color_map[type(instance)] if type(instance) in color_map else "white"
     return colored(instance.__class__.__name__ + f"({args})" + " " + suffix, color)
 
-def pn(node): 
+def print_ast(node): 
     def visit_with_formatting(node, lvl=0, res=None):
         if not node: return [] if res is None else res
     
@@ -38,10 +38,7 @@ def pn(node):
             Arg: lambda n: n.id
         }
 
-        suffix_map = { 
-            Scope: lambda n: str(n.sym) if len(n.sym) > 0 else ""
-            # Scope: lambda n: print(type(n.sym))
-        }
+        suffix_map = { Scope: lambda n: str(n.sym) if len(n.sym) > 0 else "" }
     
         for n, lvl in preorder(node):
             args = arg_map[type(n)](n) if type(n) in arg_map else ""
@@ -51,15 +48,3 @@ def pn(node):
         return res
 
     print("\n".join(visit_with_formatting(node)))
-
-# def pst(table): 
-#     def print_vars(table):
-#         for type,value in table.vars.items():
-#             print(f"    {value} '({type})'")
-#             for child in table.children:
-#                 print_vars(child)
-
-#     print("fn:")
-#     for fn,sym_table in table.functions.items():
-#         print(f"  {fn}:")
-#         print_vars(sym_table)

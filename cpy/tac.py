@@ -147,9 +147,7 @@ def to_tac(sem_result):
     def ret(tac_fn:TACFn,scope,node):
         ref = None
         if (isinstance(node.value, (BOp,Const,Call))):
-            # ref = tac_fn.ids[id(node.value)]
             add_tac(tac_fn,node.value,scope)
-            pass
         else: 
             ref = get_symbol(node.value,scope)
         tac_fn.block.append(TACRet(ref))  
@@ -187,7 +185,6 @@ def to_tac(sem_result):
                     add_tac(tac_fn,n,scope)
                 tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
                 tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
-                continue
             else: 
                 for n in postorder(node):
                     add_tac(tac_fn,n,scope)
@@ -218,7 +215,7 @@ if __name__ == "__main__":
     """
     ast = list(Prs(code).parse())
     a,b,c,d=sem.analyze(ast) 
-    dbg.pn(ast)
+    dbg.print_ast(ast)
     res = to_tac((a,b,c,d))
     print("tac")
     print(res)

@@ -1,5 +1,7 @@
 import unittest
 from cpy import Prs
+from unittest.mock import patch
+import os
 
 class TestPrs(unittest.TestCase):
     def to_str(self, input, fn = Prs.stmnt) -> str: return str(fn(Prs(input)))
@@ -26,9 +28,19 @@ class TestPrs(unittest.TestCase):
         self.assertEqual(self.to_str("a=b=c;"), "BOp(Ref(a)=BOp(Ref(b)=Ref(c)))")
         self.assertEqual(self.to_str("a+=a+=3;"), "BOp(Ref(a)+=BOp(Ref(a)+=Const(3)))")
         self.assertEqual(self.to_str("c-=c-=33;"), "BOp(Ref(c)-=BOp(Ref(c)-=Const(33)))")
-        # boolean logic
         self.assertEqual(self.to_str("a=b=c;"), "BOp(Ref(a)=BOp(Ref(b)=Ref(c)))")
-    
+
+    @patch.dict(os.environ, {"PRS_FOLD": "1"})
+    def test_fold(self):
+        self.assertEqual(self.to_str("a+b", Prs.expr), "BOp(Ref(a)+Ref(b))")
+        self.assertEqual(self.to_str("1+2", Prs.expr), "Const(3)")
+        self.assertEqual(self.to_str("(1+2)", Prs.expr), "Const(3)")
+        self.assertEqual(self.to_str("1+(2+3)", Prs.expr), "Const(6)")
+        self.assertEqual(self.to_str("(1+2)+3", Prs.expr), "Const(6)")
+        self.assertEqual(self.to_str("1+2+3", Prs.expr), "Const(6)")
+        self.assertEqual(self.to_str("(1+2)*3", Prs.expr), "Const(9)")
+        self.assertEqual(self.to_str("(1+2)*a", Prs.expr), "BOp(Const(3)*Ref(a))")
+
     def test_variable(self):
         self.assertEqual(self.to_str("int a=*b;"), "Var(type=int,id=a,value=UOp(*Ref(b)))")
         self.assertEqual(self.to_str("int a=2;"), "Var(type=int,id=a,value=Const(2))")

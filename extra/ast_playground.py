@@ -15,14 +15,11 @@ def draw_graph(code):
             dot.edge(str(id(node)), str(id(child)))
     dot.render("ast", format="png", view=True) 
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     code = """\
-a = 1\n
-a + a\n
+a = 1*2+3*4\n
 """
-    # code = "a + b + c"
     print_graph(code)
-
 
 #     If(
 #         test=Constant(value=1),

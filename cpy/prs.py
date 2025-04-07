@@ -1,13 +1,22 @@
 from cpy.lex import Lex, Tok
 from cpy.ast_models import *
 from cpy.dbg import *
+import os
 
 UOPS = { "++", "--", "+", "-", "*", "&" }
+
+def fold(): return os.getenv("PRS_FOLD", False)  # or "true", any non-empty string
+
+# https://en.cppreference.com/w/cpp/language/operator_precedence
+# Lower value means higher p
 PREC_MAP = { 
-    "=": 1, "+=": 1, "-=": 1, "*=": 1, "==": 1, ">=": 1, "<=": 1, "!=": 1, "<": 1, ">": 1,
-    "+": 3, "-": 3, "*": 4,
-    "/": 4,
-    "++": 5, "--": 5
+    "*": 5, "/": 5, 
+    "+": 6, "-": 6, 
+    "!=": 10, "==": 10, 
+    ">=": 9, "<=": 9, ">": 9, "<": 9,
+    "&&": 14, 
+    "||": 15,
+    "+=": 16, "-=": 16, "*=": 16, "/=": 16, "=": 16
 }
 
 class Prs:
@@ -38,19 +47,29 @@ class Prs:
             node.operand = self.uop()
         return node
 
-    def expr(self,left=None,precedence=0):
-        def get_precedence(input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
-        def next_precedence(): return get_precedence(self.peek())
-        def right_associative(op): return op.value in ["=", "+=", "-="]
+    def fold_bop(self, bop: BOp):
+        if not isinstance(bop,BOp) or not isinstance(bop.left,Const) or not isinstance(bop.right,Const): return bop
+        match bop.op: 
+            case "+": return Const(str(int(bop.left.value) + int(bop.right.value)))
+            case "*": return Const(str(int(bop.left.value) * int(bop.right.value)))
+            case "-": return Const(str(int(bop.left.value) - int(bop.right.value)))
+            case "/": return Const(str(int(bop.left.value) / int(bop.right.value)))
+        return bop
+
+    def expr(self,left=None):
+        def next_takes_prec(op:Tok): return PREC_MAP[self.peek().value] < PREC_MAP[op.value]
+        def right_associative(op): return op.value in ["=", "+=", "-=", "*="]
 
         left = left if left else self.uop()
-        while self.eatable() and next_precedence() >= precedence:
+        while self.eatable():
             op = self.eat(type="OP")
             right = self.uop()
-            if self.eatable() and (next_precedence() > get_precedence(op) or right_associative(op)):
-                left = BOp(op.value, left, self.expr(right, get_precedence(self.peek())))
+            if self.eatable() and (next_takes_prec(op) or right_associative(op)):
+                left = BOp(op.value, left, self.expr(right))
                 continue
             left = BOp(op.value, left, right)
+            if fold(): left = self.fold_bop(left)
+        if fold(): left = self.fold_bop(left)
         return left
 
     def args(self): # TODO - Support function pointers
@@ -146,14 +165,3 @@ class Prs:
         while self.peek() and self.peek().value != terminal_value: 
             yield self.stmnt()
         if terminal_value: self.eat(value=terminal_value)
-
-if __name__ == "__main__":
-    code =\
-    """
-    if (true) {}
-    """
-    res = list(Prs(code).parse())
-    import dbg
-    dbg.pn(res)
-    
-    print(res)

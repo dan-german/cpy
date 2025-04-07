@@ -1,6 +1,6 @@
 import subprocess
 
-def compile_asm(code): 
+def dump_asm(code): 
     args = ["clang", "-x", "c", "-", "-S", "-o", "-", "-Xclang", "-funwind-tables=0"]
     subprocess.run(args, input=code, text=True)
 
@@ -21,16 +21,20 @@ def run(code, output="a.out"):
     subprocess.run(["./" + output], check=True)
 
 if __name__ == "__main__":
-    code = r"""
-    int main() {
-        int x = 1;
-        int y = 2;
-        return x;
+    code = """
+    int x() {
+        int a = 1;
+        int b = a == a;
+        return b;
     }
     """
+    # code = """
+    # int x() {
+    #     int a = 2;
+    #     int b = 3;
+    #     return a * b;
+    # }
+    # """
 
-    # dump_ast(code)
-    # run(code)
     dump_llvmir(code)
-    # compile_asm(code)
-    # dump_pp(code)
+    dump_asm(code)
