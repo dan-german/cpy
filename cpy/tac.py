@@ -1,5 +1,5 @@
 from cpy.vst import *
-from cpy.prs import Prs
+from cpy.prs import Prs, ASSIGN_OPS
 from cpy.ast_models import *
 import cpy.dbg as dbg
 import cpy.sem as sem
@@ -34,7 +34,8 @@ class TACIf:
 class TACAssign:
     id: str
     value: str
-    def __str__(self): return f"{self.id} = {self.value}"
+    op: str
+    def __str__(self): return f"{self.id} {self.op} {self.value}"
 
 @dataclass
 class TACArg:
@@ -52,7 +53,7 @@ class TACOp:
 
 @dataclass
 class TACRet: 
-    value: str
+    value: str | Const
     def __str__(self): return f"return {self.value}"
     
 @dataclass
@@ -97,38 +98,48 @@ def to_tac(sem_result):
         generated_var_counter += 1
         return f"G{generated_var_counter}" # G for generated
 
-    def find_existing_tac_id(tac_fn:TACFn,node): 
-        return tac_fn.ids[node.id] if isinstance(node,Ref) else tac_fn.ids[id(node)]
+    def tac_id_for_node(tac_fn:TACFn,node): 
+        if isinstance(node,Ref): return tac_fn.ids[node.id]
+        elif isinstance(node,Const): return node
+        else: return tac_fn.ids[id(node)]
 
     def assign(tac_fn:TACFn,node:BOp):
-        left = find_existing_tac_id(tac_fn,node.left)
-        right = find_existing_tac_id(tac_fn,node.right)
-        tac_fn.block.append(TACAssign(left, TACRef(right)))
+        left = tac_id_for_node(tac_fn,node.left)
+        right = tac_id_for_node(tac_fn,node.right)
+        tac_fn.block.append(TACAssign(left, right, node.op))
         tac_fn.ids[id(node)] = left
 
     def bop(tac_fn:TACFn,node: BOp):
         new_tac_id = generate_id()
-        left,right = find_existing_tac_id(tac_fn,node.left),find_existing_tac_id(tac_fn,node.right)
+        # left,right = tac_id_for_node(tac_fn,node.left),tac_id_for_node(tac_fn,node.right)
+        left = tac_id_for_node(tac_fn,node.left)
+        right = tac_id_for_node(tac_fn,node.right)
         tac_fn.block.append(TACOp(new_tac_id, left, node.op, right))
         tac_fn.ids[id(node)] = new_tac_id 
 
     def add_tac(tac_fn: TACFn, node, scope: Scope):
         match node:
-            case BOp(op="="):
-                assign(tac_fn, node)
             case BOp():
-                bop(tac_fn, node)
+                if node.op in ASSIGN_OPS: assign(tac_fn, node)
+                else: bop(tac_fn, node)
             case Var(id=var_id, value=var_value):
                 new_tac_id = get_symbol(node, scope)
-                tac_ref = TACRef(tac_fn.ids[var_value.id]) if isinstance(var_value, Ref) else TACRef(tac_fn.ids[id(var_value)])
-                tac_fn.block.append(TACAssign(new_tac_id, tac_ref))
+                tac_ref = TACRef(tac_fn.ids[var_value.id]) if isinstance(var_value, Ref) else var_value
+                tac_fn.block.append(TACAssign(new_tac_id, tac_ref, "="))
                 tac_fn.ids[var_id] = new_tac_id
-            case Const():
-                new_tac_id = generate_id()
-                tac_fn.block.append(TACAssign(new_tac_id, node))
-                tac_fn.ids[id(node)] = new_tac_id
+            # case Const():
+            #     new_tac_id = generate_id()
+            #     tac_fn.block.append(TACAssign(new_tac_id, node))
+            #     tac_fn.ids[id(node)] = new_tac_id
             case Ret(value=ret_value):
-                ref = tac_fn.ids[id(ret_value)] if isinstance(ret_value, (BOp, Const, Call)) else get_symbol(ret_value, scope)
+                ref = None
+                if (isinstance(ret_value, (BOp, Call))): 
+                    ref = tac_fn.ids[id(ret_value)]
+                elif isinstance(ret_value, Const):
+                    ref = ret_value
+                else:
+                    ref = get_symbol(ret_value, scope)
+                # ref = tac_fn.ids[id(ret_value)] if isinstance(ret_value, (BOp, Call)) else 
                 tac_fn.block.append(TACRet(ref))
             case Call(id=fn_id, args=args):
                 arg_list = []
@@ -160,7 +171,7 @@ def to_tac(sem_result):
                     add_tac(tac_fn,n,scope)
                     last_op = n.op if isinstance(n, BOp) else None
                 assert last_op
-                tac_fn.block.append(TACIf(find_existing_tac_id(tac_fn,node.test), f"then_{if_counter}", last_op))
+                tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", last_op))
                 tac_fn.block.append(TACGoto(f"else_{if_counter}"))
                 tac_fn.block.append(TACLabel(f"then_{if_counter}"))
 
@@ -199,9 +210,7 @@ if __name__ == "__main__":
     code =\
     """
     int main() {
-        if (1==2) { 
-        } else { 
-        }
+        return 1;
     }
     """
     ast = list(Prs(code).parse())

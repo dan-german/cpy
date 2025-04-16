@@ -2,11 +2,12 @@ from cpy.lex import Lex, Tok
 from cpy.ast_models import *
 from cpy.dbg import *
 
+ASSIGN_OPS = ["=", "+=", "-=", "*="]
 UOPS = { "++", "--", "+", "-", "*", "&" }
 PREC_MAP = { 
     "=": 1, "+=": 1, "-=": 1, "*=": 1, "==": 1, ">=": 1, "<=": 1, "!=": 1, "<": 1, ">": 1,
-    "+": 3, "-": 3, "*": 4,
-    "/": 4,
+    "+": 3, "-": 3, 
+    "*": 4, "/": 4,
     "++": 5, "--": 5
 }
 
@@ -97,13 +98,12 @@ class Prs:
         return r
 
     def id_(self): 
-        def is_assignment(): return self.peek().value in ["=", "+=", "-=", "*="] 
         id = self.eat(type="ID").value
         if self.peek() and self.peek().value == "(":
             call = self.call(id)
             self.eat(value=";")
             return call
-        elif self.peek() and is_assignment():
+        elif self.peek() and self.peek().value in ASSIGN_OPS:
             exp = self.expr(Ref(id))
             self.eat(value=";")
             return exp

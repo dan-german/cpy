@@ -5,6 +5,7 @@ from cpy.dbg import *
 
 cmp_mnemonics = {"==": "beq", "!=": "bne", ">": "bgt", ">=": "bge", "<": "blt", "<=": "ble"}
 
+# debug=True adds a call to _DBG in _main only!
 def lower(tac: TACTable,debug=False):
     res = f".global {",".join([f"_{x.id}" for x in tac.functions])}\n"
     res += ".align 2\n\n"
@@ -62,8 +63,10 @@ def lower(tac: TACTable,debug=False):
 
         def alu(op:str,left,right,id):
             nonlocal res
-            load("w8", left)
-            load("w9", right)
+            if isinstance(left,Const): move("w8", left.value)
+            else: load("w8", left)
+            if isinstance(right,Const): move("w9", right.value)
+            else: load("w9", right)
 
             if op in cmp_mnemonics:
                 res += f"  cmp w8, w9"
@@ -78,7 +81,7 @@ def lower(tac: TACTable,debug=False):
         arg_regs = [f"w{x}" for x in range(8)]
         for arg in fn.args: 
             reg = arg_regs.pop(0)
-            res += f"  str {reg}, [sp, #{stack_address_map[arg]}]; load arg {arg}\n\n"
+            res += f"  str {reg}, [sp, #{stack_address_map[arg.value]}]; load arg {arg.value}\n\n"
 
         for tac in fn.block:
             comment(str(tac))
@@ -100,7 +103,8 @@ def lower(tac: TACTable,debug=False):
                 case TACOp(op=op, left=left, right=right, id=res_id):
                     alu(op, left, right, res_id)
                 case TACRet(value=ret_val):
-                    load("w0", ret_val)
+                    if isinstance(ret_val,Const): move("w0", ret_val.value)
+                    else: load("w0", ret_val)
                     ret()
                 case TACCall(fn=fn_name, args=args, return_value_id=ret_id):
                     arg_regs = [f"w{x}" for x in range(8)]
@@ -114,7 +118,7 @@ def lower(tac: TACTable,debug=False):
                     if ret_id:
                         store("w0", ret_id)
 
-        ret()
+        # ret()
 
     for fn in tac.functions:
         process_fn(fn)
@@ -122,15 +126,12 @@ def lower(tac: TACTable,debug=False):
 
 if __name__ == "__main__":
     code = """
-    int main() { 
-        if (3>2>1) { return 1; }
-        return 2;
-    }
+    int main() {return 2*2;}
     """
     ast = list(Prs(code).parse())
     a,b,c,sym_table=sem.analyze(ast)
     t = to_tac((a,b,c,sym_table))
-    # print(t)
+    print(t)
     # print()
     asm = lower(t,True)
     # print()
