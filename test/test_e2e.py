@@ -5,7 +5,6 @@ import random
 
 def debug(code:str):
     arm64 = compiler.compile(code,debug=True)
-    print(arm64)
     args = ["clang", "-x", "assembler","-"]
     subprocess.run(args, input=arm64, text=True)
     # This places a breakpoint at DBG label and prints out x0's content to stdout
@@ -30,8 +29,8 @@ class TestE2E(unittest.TestCase): # TODO - make fast
             x = random.randint(0,MAX)
             self.assertEqual(x-x+x, int(debug(f"int main(){{return {x}-{x}+{x};}}")))
             # TODO - add division
-            # x = random.randint(0,max_operand)
-            # self.assertEqual(x//x, int(self.run_code(f"int main(){{return {x}/{x};}}")))
+            x = random.randint(1,MAX)
+            self.assertEqual(int(x/x), int(debug(f"int main(){{return {x}/{x};}}")))
 
     def test_assign(self):
         code1 = """

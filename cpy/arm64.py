@@ -127,7 +127,6 @@ def lower(tac: TACTable,debug=False):
                     res += f"  bl _{fn_name}\n"
                     if ret_id:
                         store("w0", ret_id)
-        # if ()
         if not applied_ret: ret()
 
     for fn in tac.functions:

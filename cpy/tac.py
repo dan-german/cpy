@@ -99,9 +99,7 @@ def to_tac(sem_result):
     stmts,global_vars,functions,_ = sem_result
     generated_var_counter = -1
 
-    def get_symbol(node, scope: Scope): 
-        res = (scope.find_var(node) or global_vars[node.id]).id
-        return res
+    def get_symbol(node, scope: Scope): return (scope.find_var(node) or global_vars[node.id]).id
 
     def generate_id():
         nonlocal generated_var_counter
@@ -171,14 +169,10 @@ def to_tac(sem_result):
         nonlocal if_counter
         unwrap(tac_fn,node.test,scope)
         tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", tac_fn.block[-1].op))
-        tac_fn.block.append(TACGoto(f"else_{if_counter}"))
-        tac_fn.block.append(TACLabel(f"then_{if_counter}"))
-
-        unwrap(tac_fn,node.body.stmts,scope)
-        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
-        tac_fn.block.append(TACLabel(f"else_{if_counter}"))
-
         unwrap(tac_fn,node.else_,scope)
+        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"then_{if_counter}"))
+        unwrap(tac_fn,node.body,scope)
         tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
         tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
         if_counter += 1
@@ -187,9 +181,9 @@ def to_tac(sem_result):
         nonlocal if_counter
         tac_fn.block.append(TACLabel(f"loop_start_{if_counter}"))
         unwrap(tac_fn,node.test,scope)
-        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", tac_fn.block[-1].op))
+        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"do_{if_counter}", tac_fn.block[-1].op))
         tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
-        tac_fn.block.append(TACLabel(f"then_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"do_{if_counter}"))
         unwrap(tac_fn, node.body, scope)
         tac_fn.block.append(TACGoto(f"loop_start_{if_counter}"))
         tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
@@ -240,24 +234,3 @@ if __name__ == "__main__":
     dbg.pn(ast)
     res = to_tac((a,b,c,d))
     print(res)
-
-"""
-# g0 = cmp i < 2
-# if g0 goto do1
-# exit_loop1:
-# do1:
-"""
-
-# main: []
-#   x0 = Const(1)
-#   G0 = x0 < Const(2)
-#   if G0 goto then_0
-#   goto else_0
-#   then_0:
-#   x0 *= Const(2)
-#   goto exit_0
-#   else_0:
-#   x0 *= Const(3)
-#   goto exit_0
-#   exit_0:
-#   return x0

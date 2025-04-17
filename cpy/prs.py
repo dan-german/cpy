@@ -2,7 +2,6 @@ from cpy.lex import Lex, Tok
 from cpy.ast_models import *
 from cpy.dbg import *
 
-# ASSIGN_OPS = ["=", "+=", "-=", "*="]
 ASSIGN_OPS = { 
     "=": "", 
     "+=": "+", 
