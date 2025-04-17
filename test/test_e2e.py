@@ -91,7 +91,21 @@ class TestE2E(unittest.TestCase): # TODO - make fast
         self.assertEqual(run_condition("1!=1", 1, 2), 2) 
         self.assertEqual(run_condition("1<1", 1, 2), 2) 
         self.assertEqual(run_condition("1<=1", 1, 2), 1) 
-        # self.assertEqual(run_condition("3>2>1", 1, 2), 1) TODO: make work
+
+    def test_while(self):
+        code = """
+        int main() { 
+            int x = 1;
+            int i = 0;
+            while (i < 2) { 
+                i += 1;
+                x *= 3;
+            }
+            return x;
+        }
+        """
+        self.assertEqual(int(debug(code)),9)
+
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

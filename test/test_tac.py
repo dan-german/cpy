@@ -109,27 +109,35 @@ class TestTac(unittest.TestCase):
             TACRet(value='x0')
         ])
 
-    # def test_while(self):
-    #     code =\
-    #     """
-    #     int main() { 
-    #         int x = 0;
-    #         int i = 0;
-    #         while (i < 2) { 
-    #             x *= 2;
-    #         }
-    #         return x;
-    #     }
-    #     """
-    #     tac_table = self.to_tac(code)
-    #     self.assertEqual(tac_table.functions[0].block, [
-    #         TACAssign(id='x0', value=Const(value='0'), op='='), 
-    #         TACAssign(id='i0', value=Const(value='0'), op='='), 
-    #         TACOp(id='G0', left='i0', op='<', right=Const(value='2')), 
-    #         TACAssign(id='x0', value=Const(value='2'), op='*='), 
-    #         TACRet(value='x0')
-    #     ])
-
+    def test_while(self):
+        code =\
+        """
+        int main() { 
+            int x = 1;
+            int i = 0;
+            while (i < 2) { 
+                x *= 2;
+                i+=1;
+            }
+            return x;
+        }
+        """
+        tac_table = self.to_tac(code)
+        print(tac_table.functions[0].block)
+        self.assertEqual(tac_table.functions[0].block, [
+            TACAssign(id='x0', value=Const(value='1'), op='='), 
+            TACAssign(id='i0', value=Const(value='0'), op='='), 
+            TACLabel(label='loop_start_0'), 
+            TACOp(id='G0', left='i0', op='<', right=Const(value='2')), 
+            TACIf(value='G0', label='then_0', last_test_op='<'), 
+            TACGoto(label='exit_0'), 
+            TACLabel(label='then_0'), 
+            TACAssign(id='x0', value=Const(value='2'), op='*='), 
+            TACAssign(id='i0', value=Const(value='1'), op='+='), 
+            TACGoto(label='loop_start_0'), 
+            TACLabel(label='exit_0'), 
+            TACRet(value='x0')
+        ])
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

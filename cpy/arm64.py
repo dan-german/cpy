@@ -3,7 +3,7 @@ from cpy.prs import Prs
 from cpy.tac import *
 from cpy.dbg import *
 
-cmp_mnemonics = {"==": "beq", "!=": "bne", ">": "bgt", ">=": "bge", "<": "blt", "<=": "ble"}
+cmp_mnemonics = {"==": "b.eq", "!=": "b.ne", ">": "b.gt", ">=": "b.ge", "<": "b.lt", "<=": "b.le"}
 
 # debug=True adds a call to _DBG in _main only!
 def lower(tac: TACTable,debug=False):
@@ -96,7 +96,7 @@ def lower(tac: TACTable,debug=False):
             reg = arg_regs.pop(0)
             res += f"  str {reg}, [sp, #{stack_address_map[arg.value]}]; load arg {arg.value}\n\n"
         
-
+        applied_ret = False
         for tac in fn.block:
             comment(str(tac))
             print(tac)
@@ -115,6 +115,7 @@ def lower(tac: TACTable,debug=False):
                     if isinstance(ret_val,Const): move("w0", ret_val.value)
                     else: load("w0", ret_val)
                     ret()
+                    applied_ret = True
                 case TACCall(fn=fn_name, args=args, return_value_id=ret_id):
                     arg_regs = [f"w{x}" for x in range(8)]
                     for arg in args:
@@ -126,6 +127,8 @@ def lower(tac: TACTable,debug=False):
                     res += f"  bl _{fn_name}\n"
                     if ret_id:
                         store("w0", ret_id)
+        # if ()
+        if not applied_ret: ret()
 
     for fn in tac.functions:
         process_fn(fn)
@@ -134,11 +137,23 @@ def lower(tac: TACTable,debug=False):
 if __name__ == "__main__":
     code = """
     int main() {
-        int x = 2;
-        x *= 2;
+        int x = 1;
+        int i = 0;
+        while (i < 2) {
+            i += 1;
+            x *= 2;
+        }
         return x;
     }
     """
+
+    code = """
+    int main() { 
+        int x = 2;
+        return x;
+    }
+    """
+
     ast = list(Prs(code).parse())
     a,b,c,sym_table=sem.analyze(ast)
     t = to_tac((a,b,c,sym_table))

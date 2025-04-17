@@ -4,7 +4,6 @@ from cpy.ast_models import *
 import cpy.dbg as dbg
 import cpy.sem as sem
 from dataclasses import dataclass, field
-from collections import defaultdict
 
 @dataclass
 class TACFn: 
@@ -133,7 +132,6 @@ def to_tac(sem_result):
         if isinstance(node.value,Ref): tac_ref = TACRef(tac_fn.get_id(node.value.id))
         elif isinstance(node.value,BOp): tac_ref = tac_fn.get_id(id(node.value))
         else: tac_ref = node.value
-        # print(new_tac_id,tac_ref)
         tac_fn.block.append(TACAssign(new_tac_id, tac_ref, "="))
         tac_fn.ids[node.id] = new_tac_id
 
@@ -185,16 +183,16 @@ def to_tac(sem_result):
         tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
         if_counter += 1
 
-    # while_counter = 0
     def while_(tac_fn,node,scope):
         nonlocal if_counter
         tac_fn.block.append(TACLabel(f"loop_start_{if_counter}"))
         unwrap(tac_fn,node.test,scope)
         tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", tac_fn.block[-1].op))
-        unwrap(tac_fn, node.body, scope)
-        tac_fn.block.append(TACGoto(f"else_{if_counter}"))
+        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
         tac_fn.block.append(TACLabel(f"then_{if_counter}"))
-        pass
+        unwrap(tac_fn, node.body, scope)
+        tac_fn.block.append(TACGoto(f"loop_start_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
         if_counter += 1
 
     def process_scope(tac_fn,scope:Scope,v=0):
@@ -237,13 +235,6 @@ if __name__ == "__main__":
         return x;
     }
     """
-    code = """
-    int main() {
-        int x = 2;
-        x += 3;
-        return x;
-    }
-"""
     ast = list(Prs(code).parse())
     a,b,c,d=sem.analyze(ast) 
     dbg.pn(ast)
