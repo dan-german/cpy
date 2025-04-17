@@ -5,6 +5,7 @@ import random
 
 def debug(code:str):
     arm64 = compiler.compile(code,debug=True)
+    print(arm64)
     args = ["clang", "-x", "assembler","-"]
     subprocess.run(args, input=arm64, text=True)
     # This places a breakpoint at DBG label and prints out x0's content to stdout
@@ -31,6 +32,44 @@ class TestE2E(unittest.TestCase): # TODO - make fast
             # TODO - add division
             # x = random.randint(0,max_operand)
             # self.assertEqual(x//x, int(self.run_code(f"int main(){{return {x}/{x};}}")))
+
+    def test_assign(self):
+        code1 = """
+        int main() { 
+            int x = 2;
+            int y = 4;
+            x = 4;
+            return x;
+        }
+        """
+        self.assertEqual(4, int(debug(code1)))
+
+        code2 = """
+        int main() { 
+            int x = 3;
+            x *= 3;
+            return x;
+        }
+        """
+        self.assertEqual(9, int(debug(code2)))
+
+        code3 = """
+        int main() { 
+            int x = 1;
+            x += 3;
+            return x;
+        }
+        """
+        self.assertEqual(4, int(debug(code3)))
+        
+        code4 = """
+        int main() { 
+            int x = 10;
+            x /= 2;
+            return x;
+        }
+        """
+        self.assertEqual(5, int(debug(code4)))
 
     def test_reassignment(self): 
         code = """

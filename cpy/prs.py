@@ -2,10 +2,18 @@ from cpy.lex import Lex, Tok
 from cpy.ast_models import *
 from cpy.dbg import *
 
-ASSIGN_OPS = ["=", "+=", "-=", "*="]
+# ASSIGN_OPS = ["=", "+=", "-=", "*="]
+ASSIGN_OPS = { 
+    "=": "", 
+    "+=": "+", 
+    "-=": "-", 
+    "*=": "*",
+    "/=": "/"
+}
+
 UOPS = { "++", "--", "+", "-", "*", "&" }
 PREC_MAP = { 
-    "=": 1, "+=": 1, "-=": 1, "*=": 1, "==": 1, ">=": 1, "<=": 1, "!=": 1, "<": 1, ">": 1,
+    "=": 1, "+=": 1, "-=": 1, "*=": 1, "/=": 1, "==": 1, ">=": 1, "<=": 1, "!=": 1, "<": 1, ">": 1,
     "+": 3, "-": 3, 
     "*": 4, "/": 4,
     "++": 5, "--": 5
@@ -42,13 +50,12 @@ class Prs:
     def expr(self,left=None,precedence=0):
         def get_precedence(input): return PREC_MAP[input.value if isinstance(input, Tok) else input]
         def next_precedence(): return get_precedence(self.peek())
-        def right_associative(op): return op.value in ["=", "+=", "-="]
 
         left = left if left else self.uop()
         while self.eatable() and next_precedence() >= precedence:
             op = self.eat(type="OP")
             right = self.uop()
-            if self.eatable() and (next_precedence() > get_precedence(op) or right_associative(op)):
+            if self.eatable() and (next_precedence() > get_precedence(op) or op.value in ASSIGN_OPS):
                 left = BOp(op.value, left, self.expr(right, get_precedence(self.peek())))
                 continue
             left = BOp(op.value, left, right)
@@ -131,6 +138,13 @@ class Prs:
         self.eat(value="{")
         return Scope(list(self.parse("}")))
 
+    def while_(self):
+        self.eat(value="while")
+        self.eat(value="(")
+        test = self.expr()
+        self.eat(value=")")
+        return While(test, self.scope())
+
     def stmnt(self):
         def is_type(st: str): return st in {"int", "float", "void"}
         while self.eatable():
@@ -140,6 +154,7 @@ class Prs:
                 case token if token.type == "ID": return self.id_()
                 case token if token.value == "if": return self.if_()
                 case token if token.value == "{": return self.scope()
+                case token if token.value == "while": return self.while_()
             return self.expr()
 
     def parse(self, terminal_value: str = None): 
@@ -150,7 +165,7 @@ class Prs:
 if __name__ == "__main__":
     code =\
     """
-    if (true) {}
+    while (true) {int a = 1;}
     """
     res = list(Prs(code).parse())
     import dbg

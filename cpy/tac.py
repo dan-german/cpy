@@ -33,6 +33,14 @@ class TACIf:
     def __str__(self): return f"if {self.value} goto {self.label}"
 
 @dataclass 
+class TACWhile:
+    value: str
+    label: str
+    last_test_op: str
+    def __str__(self): return f"if {self.value} goto {self.label}"
+
+
+@dataclass 
 class TACAssign:
     id: str
     value: str
@@ -125,7 +133,7 @@ def to_tac(sem_result):
         if isinstance(node.value,Ref): tac_ref = TACRef(tac_fn.get_id(node.value.id))
         elif isinstance(node.value,BOp): tac_ref = tac_fn.get_id(id(node.value))
         else: tac_ref = node.value
-        print(new_tac_id,tac_ref)
+        # print(new_tac_id,tac_ref)
         tac_fn.block.append(TACAssign(new_tac_id, tac_ref, "="))
         tac_fn.ids[node.id] = new_tac_id
 
@@ -145,48 +153,59 @@ def to_tac(sem_result):
                 arg_list = []
                 for arg in args:
                     match arg:
-                        case Const():
-                            arg_list.append(arg)
                         case Ref():
                             arg_sym = get_symbol(arg, scope)
                             arg_list.append(TACRef(arg_sym))
                             tac_fn.ids[id(arg)] = arg_sym
+                        case Const(): arg_list.append(arg)
                         case _: raise Exception("unhandled")
-                if functions[fn_id] == "void":
-                    tac_fn.block.append(TACCall(fn_id, arg_list, None))
+                if functions[fn_id] == "void": tac_fn.block.append(TACCall(fn_id, arg_list, None))
                 else:
                     new_tac_id = generate_id()
                     tac_fn.ids[id(node)] = new_tac_id
                     tac_fn.block.append(TACCall(fn_id, arg_list, new_tac_id))
 
+    def unwrap(tac_fn,node,scope): 
+        for n in postorder(node): add_tac(tac_fn,n,scope)
+
+    if_counter = 0
+    def if_(tac_fn,node,scope):
+        nonlocal if_counter
+        unwrap(tac_fn,node.test,scope)
+        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", tac_fn.block[-1].op))
+        tac_fn.block.append(TACGoto(f"else_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"then_{if_counter}"))
+
+        unwrap(tac_fn,node.body.stmts,scope)
+        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"else_{if_counter}"))
+
+        unwrap(tac_fn,node.else_,scope)
+        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
+        if_counter += 1
+
+    # while_counter = 0
+    def while_(tac_fn,node,scope):
+        nonlocal if_counter
+        tac_fn.block.append(TACLabel(f"loop_start_{if_counter}"))
+        unwrap(tac_fn,node.test,scope)
+        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", tac_fn.block[-1].op))
+        unwrap(tac_fn, node.body, scope)
+        tac_fn.block.append(TACGoto(f"else_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"then_{if_counter}"))
+        pass
+        if_counter += 1
+
     def process_scope(tac_fn,scope:Scope,v=0):
+        nonlocal if_counter
         if_counter = 0
         for node in scope.stmts:
-            if isinstance(node, Scope):
-                process_scope(tac_fn,node,v)
-            elif isinstance(node, If):
-                last_op = None
-                for n in postorder(node.test):
-                    add_tac(tac_fn,n,scope)
-                    last_op = n.op if isinstance(n, BOp) else None
-                assert last_op
-                tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", last_op))
-                tac_fn.block.append(TACGoto(f"else_{if_counter}"))
-                tac_fn.block.append(TACLabel(f"then_{if_counter}"))
-
-                for n in postorder(node.body.stmts):
-                    add_tac(tac_fn,n,scope)
-                tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
-                tac_fn.block.append(TACLabel(f"else_{if_counter}"))
-
-                for n in postorder(node.else_):
-                    add_tac(tac_fn,n,scope)
-                tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
-                tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
-                continue
-            else: 
-                for n in postorder(node):
-                    add_tac(tac_fn,n,scope)
+            match node:
+                case Scope(): process_scope(tac_fn,node,v)
+                case If(): if_(tac_fn,node,scope)
+                case While(): while_(tac_fn,node,scope)
+                case _: unwrap(tac_fn,node,scope)
 
     def add_fn(fn:Fn):
         nonlocal generated_var_counter
@@ -205,31 +224,49 @@ def to_tac(sem_result):
         elif isinstance(statement,Fn): tac_fns.append(add_fn(statement))
     return TACTable(tac_fns,tac_globals)
 
-def inst_combine():
-    pass   
-
-def defuse(tac_table:TACTable):
-    defs = []
-    for item in tac_table.functions[0].block:
-        if isinstance(item,TACAssign): 
-            print("item", item)
-            defs.append(item)
-    print(defs)
-
 if __name__ == "__main__":
     code =\
     """
     int main() {
-        int i = 0;
         int x = 1;
+        int i = 0;
         while (i < 2) { 
+            i -= 1;
             x *= 2;
         }
         return x;
     }
     """
+    code = """
+    int main() {
+        int x = 2;
+        x += 3;
+        return x;
+    }
+"""
     ast = list(Prs(code).parse())
     a,b,c,d=sem.analyze(ast) 
     dbg.pn(ast)
     res = to_tac((a,b,c,d))
     print(res)
+
+"""
+# g0 = cmp i < 2
+# if g0 goto do1
+# exit_loop1:
+# do1:
+"""
+
+# main: []
+#   x0 = Const(1)
+#   G0 = x0 < Const(2)
+#   if G0 goto then_0
+#   goto else_0
+#   then_0:
+#   x0 *= Const(2)
+#   goto exit_0
+#   else_0:
+#   x0 *= Const(3)
+#   goto exit_0
+#   exit_0:
+#   return x0

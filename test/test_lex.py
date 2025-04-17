@@ -8,7 +8,7 @@ class TestLex(unittest.TestCase):
 
     def test_lex(self):
         self.assert_lex(code="1 1.0 23 23. 45.6", expected=["NUM 1", "NUM 1.0", "NUM 23", "NUM 23.", "NUM 45.6"])
-        self.assert_lex(code="auto break case", expected=["KEYWORD auto", "KEYWORD break", "KEYWORD case"])
+        self.assert_lex(code="auto break case while", expected=["KEYWORD auto", "KEYWORD break", "KEYWORD case", "KEYWORD while"])
         self.assert_lex(code="a aa a1 aa11", expected=["ID a", "ID aa", "ID a1", "ID aa11"])
         self.assert_lex(code=r'"a" "\"" "\n"', expected=[r'STR "a"', r'STR "\""', r'STR "\n"'])
         self.assert_lex(code="){,;", expected=["PUNCTUATION )", "PUNCTUATION {", "PUNCTUATION ,", "PUNCTUATION ;"])

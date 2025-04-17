@@ -69,6 +69,9 @@ class TestPrs(unittest.TestCase):
     def test_ref(self):
         self.assertEqual(self.to_str("a;"), "Ref(a)")
 
+    def test_while(self):
+        self.assertEqual(self.to_str("while(x<1){int a=2;}"), "While(test=BOp(Ref(x)<Const(1)),body=Scope([Var(type=int,id=a,value=Const(2))]))")
+
     def test_code(self): 
         code="""
         float f() { return 1.0f + 2.0f; }

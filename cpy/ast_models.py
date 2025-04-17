@@ -73,6 +73,12 @@ class If:
     def __str__(self): return f"{self.__class__.__name__}(test={str(self.test)},body={str(self.body)},else={str(self.else_)})"
 
 @dataclass
+class While: 
+    test: UOp | BOp | Ref | Const
+    body: "Scope"
+    def __str__(self): return f"{self.__class__.__name__}(test={str(self.test)},body={str(self.body)})"
+
+@dataclass
 class Scope: 
     stmts: list
     parent_scope: "Scope" = field(default=None,metadata={FieldMetadata.TRAVERSABLE:False})

@@ -81,17 +81,55 @@ class TestTac(unittest.TestCase):
             TACRet(value='G0')
         ])
 
-    # def test_branch(self): 
+    def test_if(self): 
+        code =\
+        """
+        int main() { 
+            int x = 0;
+            if (x < 0) { 
+                x = 1;
+            } else { 
+                x = 2;
+            }
+            return x;
+        }
+        """
+        tac_table = self.to_tac(code)
+        self.assertEqual(tac_table.functions[0].block, [
+            TACAssign(id='x0', value=Const(value='0'), op='='), 
+            TACOp(id='G0', left='x0', op='<', right=Const(value='0')), 
+            TACIf(value='G0', label='then_0', last_test_op='<'), 
+            TACGoto(label='else_0'), 
+            TACLabel(label='then_0'), 
+            TACAssign(id='x0', value=Const(value='1'), op='='), 
+            TACGoto(label='exit_0'), TACLabel(label='else_0'), 
+            TACAssign(id='x0', value=Const(value='2'), op='='), 
+            TACGoto(label='exit_0'), 
+            TACLabel(label='exit_0'), 
+            TACRet(value='x0')
+        ])
+
+    # def test_while(self):
     #     code =\
     #     """
     #     int main() { 
     #         int x = 0;
-    #         if (1 == 2) { x = 1; } else { x = 2; }
+    #         int i = 0;
+    #         while (i < 2) { 
+    #             x *= 2;
+    #         }
     #         return x;
     #     }
     #     """
     #     tac_table = self.to_tac(code)
-    #     print(tac_table)
+    #     self.assertEqual(tac_table.functions[0].block, [
+    #         TACAssign(id='x0', value=Const(value='0'), op='='), 
+    #         TACAssign(id='i0', value=Const(value='0'), op='='), 
+    #         TACOp(id='G0', left='i0', op='<', right=Const(value='2')), 
+    #         TACAssign(id='x0', value=Const(value='2'), op='*='), 
+    #         TACRet(value='x0')
+    #     ])
+
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

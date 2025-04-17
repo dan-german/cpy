@@ -22,7 +22,6 @@ def lower(tac: TACTable,debug=False):
         address_map = {}
         counter = 4
         for id in ids: 
-            print(f"id: {id}")
             address_map[id] = counter
             counter += type_to_bytes["int"]
         stack_size = (stack_size + 15) // 16 * 16 # ensure 16 byte alignment
@@ -33,7 +32,6 @@ def lower(tac: TACTable,debug=False):
         res += f"_{fn.id}:\n"
 
         stack_size, stack_address_map = prepare_prologue(fn)
-        print(f"stack size: {stack_size}")
         indent = " "*2
         
         def store(register:str,id:str):
@@ -71,9 +69,24 @@ def lower(tac: TACTable,debug=False):
             if op in cmp_mnemonics:
                 res += f"  cmp w8, w9"
             else:
-                mnemonic = {"+":"add","*":"mul","-":"sub"}[op]
+                mnemonic = {"+":"add","*":"mul","-":"sub", "/": "sdiv"}[op]
                 res += f"  {mnemonic} w8, w8, w9\n"
                 res += f"  str w8, [sp, #{stack_address_map[id]}]\n"
+
+        def assign(tac:TACAssign):
+            match tac.value:
+                case Const(value=const_val):
+                    match tac.op:
+                        case "=":
+                            move("w8", const_val)
+                            store("w8", tac.id)
+                        case _: alu(ASSIGN_OPS[tac.op], tac.id, tac.value, tac.id)
+                case TACRef(id=ref_id):
+                    match tac.op:
+                        case "=":
+                            load("w8", ref_id)
+                            store("w8", tac.id)
+                        case _: alu(ASSIGN_OPS[tac.op], ref_id, tac.id, tac.id)
 
         res += f"  str lr, [sp, #-{stack_size}]!\n" # prepare stack and save link register for later
 
@@ -82,6 +95,7 @@ def lower(tac: TACTable,debug=False):
         for arg in fn.args: 
             reg = arg_regs.pop(0)
             res += f"  str {reg}, [sp, #{stack_address_map[arg.value]}]; load arg {arg.value}\n\n"
+        
 
         for tac in fn.block:
             comment(str(tac))
@@ -94,12 +108,7 @@ def lower(tac: TACTable,debug=False):
                 case TACIf(value=_,label=label,last_test_op=op):
                     print("last", op)
                     res += f"  {cmp_mnemonics[op]} {label}"
-                case TACAssign(value=TACRef(id=ref_id)):
-                    load("w8", ref_id)
-                    store("w8", tac.id)
-                case TACAssign(value=Const(value=const_val)):
-                    move("w8", const_val)
-                    store("w8", tac.id)
+                case TACAssign(): assign(tac)
                 case TACOp(op=op, left=left, right=right, id=res_id):
                     alu(op, left, right, res_id)
                 case TACRet(value=ret_val):
@@ -118,21 +127,21 @@ def lower(tac: TACTable,debug=False):
                     if ret_id:
                         store("w0", ret_id)
 
-        # ret()
-
     for fn in tac.functions:
         process_fn(fn)
     return res.strip()
 
 if __name__ == "__main__":
     code = """
-    int main() {return 2*2;}
+    int main() {
+        int x = 2;
+        x *= 2;
+        return x;
+    }
     """
     ast = list(Prs(code).parse())
     a,b,c,sym_table=sem.analyze(ast)
     t = to_tac((a,b,c,sym_table))
-    print(t)
-    # print()
+    print(t.functions[0].block)
     asm = lower(t,True)
-    # print()
     print(asm)
