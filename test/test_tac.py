@@ -6,6 +6,28 @@ from cpy.tac import *
 class TestTac(unittest.TestCase):
     def to_tac(self,code:str): return to_tac(sem.analyze(list(prs.Prs(code).parse())))
 
+    def test1(self): 
+        code =\
+        """
+        int main() {
+            int a = 2;
+            int b = a * a;
+            a = 3;
+            b = b + a;
+            return a + b;
+        }
+        """
+        self.assertEqual(self.to_tac(code).functions[0].block, [
+            TACAssign(id='a0', value=Const(value='2'), op='='), 
+            TACOp(id='G0', left='a0', op='*', right='a0'), 
+            TACAssign(id='b0', value='G0', op='='), 
+            TACAssign(id='a0', value=Const(value='3'), op='='), 
+            TACOp(id='G1', left='b0', op='+', right='a0'), 
+            TACAssign(id='b0', value='G1', op='='), 
+            TACOp(id='G2', left='a0', op='+', right='b0'), 
+            TACRet(value='G2')
+        ])
+
     def test_fn_and_arith(self):
         code =\
         """
@@ -53,10 +75,10 @@ class TestTac(unittest.TestCase):
         self.assertEqual(main.block, [
             TACAssign(id='x0', value=Const(value='0'), op='='), 
             TACAssign(id='x0', value=Const(value='2'), op='='),
-             TACAssign(id='y0', value=TACRef(id='x0'), op='='),
-             TACAssign(id='y0', value='x0', op='='),
-             TACOp(id='G0', left='x0', op='+', right='y0'),
-             TACRet(value='G0')
+            TACAssign(id='y0', value=TACRef(id='x0'), op='='),
+            TACAssign(id='y0', value='x0', op='='),
+            TACOp(id='G0', left='x0', op='+', right='y0'),
+            TACRet(value='G0')
         ])
 
     # def test_branch(self): 
