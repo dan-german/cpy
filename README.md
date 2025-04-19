@@ -51,5 +51,6 @@ print(debug(code))  # Outputs: 6
 
 ✅ Functions  
 ✅ Integer arithmetic  
-🟨 Some conditional branching  
+✅ If/else statements
+✅ While statements
 🔜 More features coming soon!  

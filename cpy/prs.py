@@ -144,7 +144,7 @@ class Prs:
         self.eat(value=")")
         return While(test, self.scope())
 
-    def stmnt(self):
+    def stmt(self):
         def is_type(st: str): return st in {"int", "float", "void"}
         while self.eatable():
             match self.peek():
@@ -158,16 +158,30 @@ class Prs:
 
     def parse(self, terminal_value: str = None): 
         while self.peek() and self.peek().value != terminal_value: 
-            yield self.stmnt()
+            sp = self.peek().value
+            st = self.stmt()
+            yield st
         if terminal_value: self.eat(value=terminal_value)
 
 if __name__ == "__main__":
-    code =\
-    """
-    while (true) {int a = 1;}
-    """
+    code = """
+        int main() { 
+            int x = 1;
+            int i = 0;
+            while (i < 2) { 
+                int j = 3;
+                x *= 2;
+                while (j != 0) { 
+                    x *= 2;
+                    j -= 1;
+                }
+                i+=1;
+            }
+            return x;
+        }
+        """
     res = list(Prs(code).parse())
     import dbg
     dbg.pn(res)
     
-    print(res)
+    # print(res)

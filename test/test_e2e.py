@@ -91,11 +91,52 @@ class TestE2E(unittest.TestCase): # TODO - make fast
         self.assertEqual(run_condition("1<1", 1, 2), 2) 
         self.assertEqual(run_condition("1<=1", 1, 2), 1) 
 
+        code = """
+        int main() {
+            int x = 1;
+            if (x < 1) { 
+                x = 2;
+            } else { 
+                x = 3;
+            }
+            return x;
+        }"""
+        self.assertEqual(int(debug(code)), 3)
+
+        code = """
+        int main() {
+            int x = 1;
+            if (x == 1) { 
+                x = 2;
+            } else { 
+                x = 3;
+            }
+            return x;
+        }"""
+        self.assertEqual(int(debug(code)), 2)
+
+        code = """
+        int main() {
+            int x = 0;
+            if (x < 2) { 
+                if (x == 0) { 
+                    x = 1;
+                } else { 
+                    x = 2;
+                }
+            } else { 
+                x = 3;
+            }
+            return x;
+        }"""
+        self.assertEqual(int(debug(code)), 1)
+
     def test_while(self):
         code = """
         int main() { 
             int x = 1;
             int i = 0;
+            int j = 0;
             while (i < 2) { 
                 i += 1;
                 x *= 3;
@@ -104,7 +145,24 @@ class TestE2E(unittest.TestCase): # TODO - make fast
         }
         """
         self.assertEqual(int(debug(code)),9)
-
+        code =\
+        """
+        int main() { 
+            int x = 1;
+            int i = 0;
+            while (i < 2) { 
+                int j = 3;
+                x *= 2;
+                while (j != 0) { 
+                    x *= 2;
+                    j -= 1;
+                }
+                i+=1;
+            }
+            return x;
+        }
+        """
+        self.assertEqual(int(debug(code)),256)
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)

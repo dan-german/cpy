@@ -69,7 +69,7 @@ class Fn:
 class If: 
     test: UOp | BOp | Ref | Const
     body: "Scope"
-    else_: "UOp | BOp | Ref | Const | If" = field(default=None)
+    else_: "Scope" = field(default=None)
     def __str__(self): return f"{self.__class__.__name__}(test={str(self.test)},body={str(self.body)},else={str(self.else_)})"
 
 @dataclass

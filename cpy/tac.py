@@ -95,6 +95,9 @@ class TACTable:
         )
         return f"{globals}\n{functions}"
 
+if_counter = 0
+while_counter = 0
+
 def to_tac(sem_result):
     stmts,global_vars,functions,_ = sem_result
     generated_var_counter = -1
@@ -164,37 +167,38 @@ def to_tac(sem_result):
     def unwrap(tac_fn,node,scope): 
         for n in postorder(node): add_tac(tac_fn,n,scope)
 
-    if_counter = 0
-    def if_(tac_fn,node,scope):
-        nonlocal if_counter
+    def if_(tac_fn,node:If,scope:Scope):
+        global if_counter
         unwrap(tac_fn,node.test,scope)
-        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"then_{if_counter}", tac_fn.block[-1].op))
-        unwrap(tac_fn,node.else_,scope)
-        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
-        tac_fn.block.append(TACLabel(f"then_{if_counter}"))
-        unwrap(tac_fn,node.body,scope)
-        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
-        tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
+        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"if_then_{if_counter}", tac_fn.block[-1].op))
         if_counter += 1
+        if node.else_: process_scope(tac_fn,node.else_)
+        if_counter -= 1
+        tac_fn.block.append(TACGoto(f"if_exit_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"if_then_{if_counter}"))
+        if_counter += 1
+        process_scope(tac_fn,node.body)
+        if_counter -= 1
+        tac_fn.block.append(TACGoto(f"if_exit_{if_counter}"))
+        tac_fn.block.append(TACLabel(f"if_exit_{if_counter}"))
 
-    def while_(tac_fn,node,scope):
-        nonlocal if_counter
-        tac_fn.block.append(TACLabel(f"loop_start_{if_counter}"))
+    def while_(tac_fn,node:While,scope:Scope):
+        global while_counter
+        tac_fn.block.append(TACLabel(f"loop_start_{while_counter}"))
         unwrap(tac_fn,node.test,scope)
-        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"do_{if_counter}", tac_fn.block[-1].op))
-        tac_fn.block.append(TACGoto(f"exit_{if_counter}"))
-        tac_fn.block.append(TACLabel(f"do_{if_counter}"))
-        unwrap(tac_fn, node.body, scope)
-        tac_fn.block.append(TACGoto(f"loop_start_{if_counter}"))
-        tac_fn.block.append(TACLabel(f"exit_{if_counter}"))
-        if_counter += 1
+        tac_fn.block.append(TACIf(tac_id_for_node(tac_fn,node.test), f"loop_do_{while_counter}", tac_fn.block[-1].op))
+        tac_fn.block.append(TACGoto(f"loop_exit_{while_counter}"))
+        tac_fn.block.append(TACLabel(f"loop_do_{while_counter}"))
+        while_counter += 1
+        process_scope(tac_fn, node.body)
+        while_counter -= 1
+        tac_fn.block.append(TACGoto(f"loop_start_{while_counter}"))
+        tac_fn.block.append(TACLabel(f"loop_exit_{while_counter}"))
 
-    def process_scope(tac_fn,scope:Scope,v=0):
-        nonlocal if_counter
-        if_counter = 0
+    def process_scope(tac_fn,scope:Scope):
         for node in scope.stmts:
             match node:
-                case Scope(): process_scope(tac_fn,node,v)
+                case Scope(): process_scope(tac_fn,node)
                 case If(): if_(tac_fn,node,scope)
                 case While(): while_(tac_fn,node,scope)
                 case _: unwrap(tac_fn,node,scope)
@@ -219,12 +223,17 @@ def to_tac(sem_result):
 if __name__ == "__main__":
     code =\
     """
-    int main() {
+    int main() { 
         int x = 1;
         int i = 0;
         while (i < 2) { 
-            i -= 1;
+            int j = 3;
             x *= 2;
+            while (j != 0) { 
+                x *= 2;
+                j -= 1;
+            }
+            i+=1;
         }
         return x;
     }

@@ -2,7 +2,7 @@ import unittest
 from cpy import Prs
 
 class TestPrs(unittest.TestCase):
-    def to_str(self, input, fn = Prs.stmnt) -> str: return str(fn(Prs(input)))
+    def to_str(self, input, fn = Prs.stmt) -> str: return str(fn(Prs(input)))
     
     def test_uop(self):
         self.assertEqual(self.to_str("abc", Prs.expr), "Ref(abc)")

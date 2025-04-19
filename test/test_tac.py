@@ -95,32 +95,17 @@ class TestTac(unittest.TestCase):
         }
         """
         tac_table = self.to_tac(code)
-        # print("shabobr",tac_table.functions[0].block)
         self.assertEqual(tac_table.functions[0].block, [
-         TACAssign(id='x0', value=Const(value='0'), op='='), 
-         TACOp(id='G0', left='x0', op='<', right=Const(value='0')), 
-         TACIf(value='G0', label='then_0', last_test_op='<'), 
-         TACAssign(id='x0', value=Const(value='2'), op='='), 
-         TACGoto(label='exit_0'), 
-         TACLabel(label='then_0'), 
-         TACAssign(id='x0', value=Const(value='1'), op='='), 
-         TACGoto(label='exit_0'), 
-         TACLabel(label='exit_0'), 
-         TACRet(value='x0')])
-
-        # self.assertEqual(tac_table.functions[0].block, [
-        #     TACAssign(id='x0', value=Const(value='0'), op='='), 
-        #     TACOp(id='G0', left='x0', op='<', right=Const(value='0')), 
-        #     TACIf(value='G0', label='then_0', last_test_op='<'), 
-        #     TACGoto(label='else_0'), 
-        #     TACLabel(label='then_0'), 
-        #     TACAssign(id='x0', value=Const(value='1'), op='='), 
-        #     TACGoto(label='exit_0'), TACLabel(label='else_0'), 
-        #     TACAssign(id='x0', value=Const(value='2'), op='='), 
-        #     TACGoto(label='exit_0'), 
-        #     TACLabel(label='exit_0'), 
-        #     TACRet(value='x0')
-        # ])
+            TACAssign(id='x0', value=Const(value='0'), op='='), 
+            TACOp(id='G0', left='x0', op='<', right=Const(value='0')), 
+            TACIf(value='G0', label='if_then_0', last_test_op='<'), 
+            TACAssign(id='x0', value=Const(value='2'), op='='), 
+            TACGoto(label='if_exit_0'), 
+            TACLabel(label='if_then_0'), 
+            TACAssign(id='x0', value=Const(value='1'), op='='), 
+            TACGoto(label='if_exit_0'), 
+            TACLabel(label='if_exit_0'), 
+            TACRet(value='x0')])
 
     def test_while(self):
         code =\
@@ -136,19 +121,63 @@ class TestTac(unittest.TestCase):
         }
         """
         tac_table = self.to_tac(code)
+        self.assertEqual(tac_table.functions[0].block, [
+            TACAssign(id='x0', value=Const(value='1'), op='='), 
+            TACAssign(id='i0', value=Const(value='0'), op='='), 
+            TACLabel(label='loop_start_0'), 
+            TACOp(id='G0', left='i0', op='<', right=Const(value='2')), 
+            TACIf(value='G0', label='loop_do_0', last_test_op='<'), 
+            TACGoto(label='loop_exit_0'), 
+            TACLabel(label='loop_do_0'), 
+            TACAssign(id='x0', value=Const(value='2'), op='*='), 
+            TACAssign(id='i0', value=Const(value='1'), op='+='), 
+            TACGoto(label='loop_start_0'), 
+            TACLabel(label='loop_exit_0'), 
+            TACRet(value='x0')
+        ])
+
+        code =\
+        """
+        int main() { 
+            int x = 1;
+            int i = 0;
+            while (i < 2) { 
+                int j = 3;
+                x *= 2;
+                while (j != 0) { 
+                    x *= 2;
+                    j -= 1;
+                }
+                i+=1;
+            }
+            return x;
+        }
+        """
+
+        tac_table = self.to_tac(code)
         print(tac_table.functions[0].block)
         self.assertEqual(tac_table.functions[0].block, [
             TACAssign(id='x0', value=Const(value='1'), op='='), 
             TACAssign(id='i0', value=Const(value='0'), op='='), 
             TACLabel(label='loop_start_0'), 
             TACOp(id='G0', left='i0', op='<', right=Const(value='2')), 
-            TACIf(value='G0', label='do_0', last_test_op='<'), 
-            TACGoto(label='exit_0'), 
-            TACLabel(label='do_0'), 
+            TACIf(value='G0', label='loop_do_0', last_test_op='<'), 
+            TACGoto(label='loop_exit_0'), 
+            TACLabel(label='loop_do_0'), 
+            TACAssign(id='j0', value=Const(value='3'), op='='), 
             TACAssign(id='x0', value=Const(value='2'), op='*='), 
+            TACLabel(label='loop_start_1'), 
+            TACOp(id='G1', left='j0', op='!=', right=Const(value='0')), 
+            TACIf(value='G1', label='loop_do_1', last_test_op='!='), 
+            TACGoto(label='loop_exit_1'), 
+            TACLabel(label='loop_do_1'), 
+            TACAssign(id='x0', value=Const(value='2'), op='*='), 
+            TACAssign(id='j0', value=Const(value='1'), op='-='), 
+            TACGoto(label='loop_start_1'), 
+            TACLabel(label='loop_exit_1'), 
             TACAssign(id='i0', value=Const(value='1'), op='+='), 
             TACGoto(label='loop_start_0'), 
-            TACLabel(label='exit_0'), 
+            TACLabel(label='loop_exit_0'), 
             TACRet(value='x0')
         ])
 

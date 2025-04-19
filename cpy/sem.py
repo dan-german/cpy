@@ -44,27 +44,41 @@ def analyze(stmts: list) -> tuple:
                 if len(child.args) > 7 or len(callee.args) > 7: raise Exception("Support stack args")
                 #TODO: type checks and stack args
 
-    def analyze_scope(scope:Scope,v=0):
+    def analyze_scope(scope:Scope):
         for node in scope.stmts:
-            validate_refs(node,scope)
-            if isinstance(node, Fn): raise DefUnallowed(node.id)
-            elif isinstance(node, Scope):
-                node.parent_scope = scope
-                analyze_scope(node,v)
-            elif isinstance(node, Var):
-                if node.id in scope.sym: raise Redefinition(node.id)
-                add_symbol(node,scope.sym,"local")
+            match node: 
+                case Fn(): raise DefUnallowed(node.id)
+                case While(): 
+                    node.body.parent_scope = scope
+                    validate_refs(node.test,scope)
+                    analyze_scope(node.body)
+                case If(): 
+                    node.body.parent_scope = scope
+                    if node.else_:node.else_.parent_scope = scope
+                    validate_refs(node.test,scope)
+                    analyze_scope(node.body)
+                    if (node.else_): analyze_scope(node.else_)
+                case Scope(): 
+                    node.parent_scope = scope
+                    analyze_scope(node)
+                case Var():
+                    validate_refs(node,scope)
+                    if node.id in scope.sym: raise Redefinition(node.id)
+                    add_symbol(node,scope.sym,"local")
+                case _: validate_refs(node,scope)
 
     for node in stmts:
-        if isinstance(node, Fn):
-            if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
-            functions[node.id] = node
-            [add_symbol(arg, node.scope.sym, "arg") for arg in node.args]
-            analyze_scope(node.scope)
-        elif isinstance(node, Ref) and node.id not in global_vars: raise Undeclared(node.id)
-        elif isinstance(node, Scope): raise GlobalScope()
-        elif isinstance(node, Var):
-            if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
-            add_symbol(node,global_vars,"global")
+        match node:
+            case Scope(): raise GlobalScope()
+            case Ref(): 
+                if node.id not in global_vars: raise Undeclared(node.id)
+            case Fn(): 
+                if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
+                functions[node.id] = node
+                [add_symbol(arg, node.scope.sym, "arg") for arg in node.args]
+                analyze_scope(node.scope)
+            case Var():
+                if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
+                add_symbol(node,global_vars,"global")
 
     return stmts,global_vars,functions,all_symbols
