@@ -17,7 +17,7 @@ def lower(tac: TACTable,debug=False):
     def prepare_prologue(fn: TACFn):
         ids = fn.ids.values()
         stack_size = 4 * len(ids) + 8 # 8 for link register
-        contains_call = any([isinstance(tac,TACCall) for tac in fn.block])
+        contains_call = any([isinstance(tac,TACCall) for tac in fn.code])
         if contains_call: stack_size += 8
         address_map = {}
         counter = 4
@@ -97,15 +97,15 @@ def lower(tac: TACTable,debug=False):
             res += f"  str {reg}, [sp, #{stack_address_map[arg.value]}]; load arg {arg.value}\n\n"
         
         applied_ret = False
-        for tac in fn.block:
+        for tac in fn.code:
             comment(str(tac))
             print(tac)
             match tac:
                 case TACLabel(label=label):
                     res += f"  {label}:"
-                case TACGoto(label=label):
+                case TACJump(label=label):
                     res += f"  b {label}"
-                case TACIf(value=_,label=label,last_test_op=op):
+                case TACCondJump(value=_,label=label,last_test_op=op):
                     print("last", op)
                     res += f"  {cmp_mnemonics[op]} {label}"
                 case TACAssign(): assign(tac)
@@ -156,6 +156,6 @@ if __name__ == "__main__":
     ast = list(Prs(code).parse())
     a,b,c,sym_table=sem.analyze(ast)
     t = to_tac((a,b,c,sym_table))
-    print(t.functions[0].block)
+    print(t.functions[0].code)
     asm = lower(t,True)
     print(asm)

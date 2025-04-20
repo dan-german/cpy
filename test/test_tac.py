@@ -17,7 +17,7 @@ class TestTac(unittest.TestCase):
             return a + b;
         }
         """
-        self.assertEqual(self.to_tac(code).functions[0].block, [
+        self.assertEqual(self.to_tac(code).functions[0].code, [
             TACAssign(id='a0', value=Const(value='2'), op='='), 
             TACOp(id='G0', left='a0', op='*', right='a0'), 
             TACAssign(id='b0', value='G0', op='='), 
@@ -45,7 +45,7 @@ class TestTac(unittest.TestCase):
         f1 = tac_table.functions[0]
         self.assertEqual(f1.args,[TACArg("int", "x0")])
 
-        self.assertEqual(f1.block,[
+        self.assertEqual(f1.code,[
             TACOp(id='G0', left='x0', op='*', right=Const(value='2')), 
             TACOp(id='G1', left='G0', op='*', right='x0'), 
             TACRet(value='G1')
@@ -53,7 +53,7 @@ class TestTac(unittest.TestCase):
 
         f2 = tac_table.functions[1]
         self.assertEqual(f2.args,[TACArg("int", "x1")])
-        self.assertEqual(f2.block,[
+        self.assertEqual(f2.code,[
             TACCall("f1", [TACRef("x1")], "G0"),
             TACRet("G0")
         ])
@@ -72,7 +72,7 @@ class TestTac(unittest.TestCase):
         tac_table = self.to_tac(code)
         main = tac_table.functions[0]
 
-        self.assertEqual(main.block, [
+        self.assertEqual(main.code, [
             TACAssign(id='x0', value=Const(value='0'), op='='), 
             TACAssign(id='x0', value=Const(value='2'), op='='),
             TACAssign(id='y0', value=TACRef(id='x0'), op='='),
@@ -95,15 +95,15 @@ class TestTac(unittest.TestCase):
         }
         """
         tac_table = self.to_tac(code)
-        self.assertEqual(tac_table.functions[0].block, [
+        self.assertEqual(tac_table.functions[0].code, [
             TACAssign(id='x0', value=Const(value='0'), op='='), 
             TACOp(id='G0', left='x0', op='<', right=Const(value='0')), 
-            TACIf(value='G0', label='if_then_0', last_test_op='<'), 
+            TACCondJump(value='G0', target='if_then_0', last_test_op='<'), 
             TACAssign(id='x0', value=Const(value='2'), op='='), 
-            TACGoto(label='if_exit_0'), 
+            TACJump(target='if_exit_0'), 
             TACLabel(label='if_then_0'), 
             TACAssign(id='x0', value=Const(value='1'), op='='), 
-            TACGoto(label='if_exit_0'), 
+            TACJump(target='if_exit_0'), 
             TACLabel(label='if_exit_0'), 
             TACRet(value='x0')])
 
@@ -121,17 +121,17 @@ class TestTac(unittest.TestCase):
         }
         """
         tac_table = self.to_tac(code)
-        self.assertEqual(tac_table.functions[0].block, [
+        self.assertEqual(tac_table.functions[0].code, [
             TACAssign(id='x0', value=Const(value='1'), op='='), 
             TACAssign(id='i0', value=Const(value='0'), op='='), 
             TACLabel(label='loop_start_0'), 
             TACOp(id='G0', left='i0', op='<', right=Const(value='2')), 
-            TACIf(value='G0', label='loop_do_0', last_test_op='<'), 
-            TACGoto(label='loop_exit_0'), 
+            TACCondJump(value='G0', target='loop_do_0', last_test_op='<'), 
+            TACJump(target='loop_exit_0'), 
             TACLabel(label='loop_do_0'), 
             TACAssign(id='x0', value=Const(value='2'), op='*='), 
             TACAssign(id='i0', value=Const(value='1'), op='+='), 
-            TACGoto(label='loop_start_0'), 
+            TACJump(target='loop_start_0'), 
             TACLabel(label='loop_exit_0'), 
             TACRet(value='x0')
         ])
@@ -155,28 +155,28 @@ class TestTac(unittest.TestCase):
         """
 
         tac_table = self.to_tac(code)
-        print(tac_table.functions[0].block)
-        self.assertEqual(tac_table.functions[0].block, [
+        print(tac_table.functions[0].code)
+        self.assertEqual(tac_table.functions[0].code, [
             TACAssign(id='x0', value=Const(value='1'), op='='), 
             TACAssign(id='i0', value=Const(value='0'), op='='), 
             TACLabel(label='loop_start_0'), 
             TACOp(id='G0', left='i0', op='<', right=Const(value='2')), 
-            TACIf(value='G0', label='loop_do_0', last_test_op='<'), 
-            TACGoto(label='loop_exit_0'), 
+            TACCondJump(value='G0', target='loop_do_0', last_test_op='<'), 
+            TACJump(target='loop_exit_0'), 
             TACLabel(label='loop_do_0'), 
             TACAssign(id='j0', value=Const(value='3'), op='='), 
             TACAssign(id='x0', value=Const(value='2'), op='*='), 
             TACLabel(label='loop_start_1'), 
             TACOp(id='G1', left='j0', op='!=', right=Const(value='0')), 
-            TACIf(value='G1', label='loop_do_1', last_test_op='!='), 
-            TACGoto(label='loop_exit_1'), 
+            TACCondJump(value='G1', target='loop_do_1', last_test_op='!='), 
+            TACJump(target='loop_exit_1'), 
             TACLabel(label='loop_do_1'), 
             TACAssign(id='x0', value=Const(value='2'), op='*='), 
             TACAssign(id='j0', value=Const(value='1'), op='-='), 
-            TACGoto(label='loop_start_1'), 
+            TACJump(target='loop_start_1'), 
             TACLabel(label='loop_exit_1'), 
             TACAssign(id='i0', value=Const(value='1'), op='+='), 
-            TACGoto(label='loop_start_0'), 
+            TACJump(target='loop_start_0'), 
             TACLabel(label='loop_exit_0'), 
             TACRet(value='x0')
         ])
