@@ -5,7 +5,7 @@ import cpy.arm64 as arm64
 
 def compile(code:str,*,debug=False) -> str: 
     statements = list(Prs(code).parse())
-    a,b,c,d = sem.analyze(statements)
-    tac_table = tac.to_tac((a,b,c,d))
+    sem_result = sem.analyze(statements)
+    tac_table = tac.to_tac(sem_result)
     print(tac_table)
     return arm64.lower(tac_table,debug)

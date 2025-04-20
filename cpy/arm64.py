@@ -99,15 +99,15 @@ def lower(tac: TACTable,debug=False):
         applied_ret = False
         for tac in fn.code:
             comment(str(tac))
-            print(tac)
+            print(type(tac),"\n\n")
             match tac:
                 case TACLabel(label=label):
                     res += f"  {label}:"
-                case TACJump(label=label):
-                    res += f"  b {label}"
-                case TACCondJump(value=_,label=label,last_test_op=op):
-                    print("last", op)
-                    res += f"  {cmp_mnemonics[op]} {label}"
+                case TACJump(target=target):
+                    res += f"  b {target}"
+                case TACCondJump(value=_,target=target,last_test_op=op):
+                    print("taccondtjump", op)
+                    res += f"  {cmp_mnemonics[op]} {target}"
                 case TACAssign(): assign(tac)
                 case TACOp(op=op, left=left, right=right, id=res_id):
                     alu(op, left, right, res_id)
@@ -147,15 +147,12 @@ if __name__ == "__main__":
     """
 
     code = """
-    int main() { 
-        int x = 2;
-        return x;
-    }
+    int main(){if(1!=1){return 1;}return 2;}
     """
 
     ast = list(Prs(code).parse())
-    a,b,c,sym_table=sem.analyze(ast)
-    t = to_tac((a,b,c,sym_table))
+    sem_res=sem.analyze(ast)
+    t = to_tac(sem_res)
     print(t.functions[0].code)
     asm = lower(t,True)
     print(asm)

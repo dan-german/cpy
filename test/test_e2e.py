@@ -5,6 +5,7 @@ import random
 
 def debug(code:str):
     arm64 = compiler.compile(code,debug=True)
+    print(arm64)
     args = ["clang", "-x", "assembler","-"]
     subprocess.run(args, input=arm64, text=True)
     # This places a breakpoint at DBG label and prints out x0's content to stdout
@@ -85,6 +86,7 @@ class TestE2E(unittest.TestCase): # TODO - make fast
     def test_if_statement(self):
         def run_condition(condition:str,ret_value_then:int, ret_value_else:int):
             code=f"""int main(){{if({condition}){{return {ret_value_then};}}return {ret_value_else};}}"""
+            print(code)
             return int(debug(code))
         self.assertEqual(run_condition("1==1", 1, 2), 1) 
         self.assertEqual(run_condition("1!=1", 1, 2), 2) 

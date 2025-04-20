@@ -98,11 +98,10 @@ class TACTable:
 if_counter = 0
 while_counter = 0
 
-def to_tac(sem_result):
-    stmts,global_vars,functions,_ = sem_result
+def to_tac(sem_result: sem.SemResult):
     generated_var_counter = -1
 
-    def get_symbol(node, scope: Scope): return (scope.find_var(node) or global_vars[node.id]).id
+    def get_symbol(node, scope: Scope): return (scope.find_var(node) or sem_result.global_vars[node.id]).id
 
     def generate_id():
         nonlocal generated_var_counter
@@ -158,7 +157,7 @@ def to_tac(sem_result):
                             tac_fn.ids[id(arg)] = arg_sym
                         case Const(): arg_list.append(arg)
                         case _: raise Exception("unhandled")
-                if functions[fn_id] == "void": tac_fn.code.append(TACCall(fn_id, arg_list, None))
+                if sem_result.functions[fn_id] == "void": tac_fn.code.append(TACCall(fn_id, arg_list, None))
                 else:
                     new_tac_id = generate_id()
                     tac_fn.ids[id(node)] = new_tac_id
@@ -215,7 +214,7 @@ def to_tac(sem_result):
         return tac_fn
 
     tac_fns,tac_globals=[],[]
-    for statement in stmts:
+    for statement in sem_result.stmts:
         if isinstance(statement,Var): tac_globals.append(TACGlobal(statement.id,statement.value))
         elif isinstance(statement,Fn): tac_fns.append(add_fn(statement))
     return TACTable(tac_fns,tac_globals)

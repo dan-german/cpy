@@ -22,7 +22,14 @@ class ArgsMiscount(Exception):
 class GlobalScope(Exception): 
     def __init__(self): super().__init__(f"Global scopes unallowed")
 
-def analyze(stmts: list) -> tuple:
+@dataclass
+class SemResult: 
+    stmts: list
+    global_vars: dict
+    functions: dict
+    all_syms: dict
+
+def analyze(stmts: list) -> SemResult:
     id_counter = defaultdict(int)
     global_vars = {}
     functions = {}
@@ -81,4 +88,4 @@ def analyze(stmts: list) -> tuple:
                 if node.id in global_vars or node.id in functions: raise Redefinition(node.id)
                 add_symbol(node,global_vars,"global")
 
-    return stmts,global_vars,functions,all_symbols
+    return SemResult(stmts,global_vars,functions,all_symbols)

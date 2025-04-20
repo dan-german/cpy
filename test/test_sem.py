@@ -42,7 +42,7 @@ class TestSem(unittest.TestCase):
     def filter_scopes(self,ast): return [node for node,_ in bfs(ast) if isinstance(node,Scope)]
 
     def test_functions(self):
-        functions = self.analyze_code("void a(){}int b(){}int c(){}")[2]
+        functions = self.analyze_code("void a(){}int b(){}int c(){}").functions
         self.assertEqual(len(functions),3)
         self.assertIn("a",functions)
         self.assertIn("b",functions)
@@ -55,50 +55,45 @@ class TestSem(unittest.TestCase):
         self.assertEqual(functions["c"].type,"int")
 
     def test_tables1(self): 
-        _, globals_dict,_,_ = self.analyze_code("int a;int b;int c;")
+        sem_result = self.analyze_code("int a;int b;int c;")
         expected_globals = {
            "a": Symbol(id="a0", type="int", scope="global"),
            "b": Symbol(id="b0", type="int", scope="global"),
            "c": Symbol(id="c0", type="int", scope="global")
         }
-        self.assertEqual(globals_dict, expected_globals)
+        self.assertEqual(sem_result.global_vars, expected_globals)
 
     def test_tables2(self): 
-        ast, globals_dict, functions,_ = self.analyze_code("int a;int f(){int a;}")
-        self.assertEqual(globals_dict, {"a": Symbol(id='a0', type='int', scope='global')})
-        self.assertIsInstance(functions["f"], Fn)
-        scopes = self.filter_scopes(ast)
+        sem_result = self.analyze_code("int a;int f(){int a;}")
+        self.assertEqual(sem_result.global_vars, {"a": Symbol(id='a0', type='int', scope='global')})
+        self.assertIsInstance(sem_result.functions["f"], Fn)
+        scopes = self.filter_scopes(sem_result.stmts)
         self.assertEqual(scopes[0].sym, {"a": Symbol(id="a1", type="int", scope="local")})
 
     def test_tables3(self): 
-        ast, globals_dict, functions,_ = self.analyze_code("int f(){int a; {int a;}}int a;")
-        self.assertEqual(globals_dict, {"a": Symbol(id="a2", type="int", scope="global")})
-        self.assertIsInstance(functions["f"], Fn)
-        scopes = self.filter_scopes(ast)
+        sem_result = self.analyze_code("int f(){int a; {int a;}}int a;")
+        self.assertEqual(sem_result.global_vars, {"a": Symbol(id="a2", type="int", scope="global")})
+        self.assertIsInstance(sem_result.functions["f"], Fn)
+        scopes = self.filter_scopes(sem_result.stmts)
         self.assertEqual(scopes[0].sym, {"a": Symbol(id="a0", type="int", scope="local")})
         self.assertEqual(scopes[1].sym, {"a": Symbol(id="a1", type="int", scope="local")})
 
     def test_all_symbols(self):
-        _, _, _, all_symbols = self.analyze_code("int f(){int a; {int a;}}int a; int f2(int a){}int f3(){int a=0;}")
+        sem_result = self.analyze_code("int f(){int a; {int a;}}int a; int f2(int a){}int f3(){int a=0;}")
         expected = {'a0': Symbol(id='a0', type='int', scope='local'), 
                     'a1': Symbol(id='a1', type='int', scope='local'), 
                     'a2': Symbol(id='a2', type='int', scope='global'), 
                     'a3': Symbol(id='a3', type='int', scope='arg'), 
                     'a4': Symbol(id='a4', type='int', scope='local')} 
-        self.assertEqual(all_symbols,expected)
+        self.assertEqual(sem_result.all_syms,expected)
 
     def test_params(self):
-        ast, _, _,_ = self.analyze_code("void f(int a,float b){}")
-        scopes = self.filter_scopes(ast)
+        sem_res = self.analyze_code("void f(int a,float b){}")
+        scopes = self.filter_scopes(sem_res.stmts)
         self.assertEqual(scopes[0].sym, {
            "a": Symbol(id="a0", type="int", scope="arg"),
            "b": Symbol(id="b0", type="float", scope="arg")
         })
-
-    # def test_params(self):
-    #    ast,_,_ = self.analyze_code("void f(int f()){}")
-    #    scopes = self.filter_scopes(ast)
-    #    self.assertEqual(str(scopes[0].sym),"a:(int,a0,arg),b:(float,b0,arg)") 
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)
