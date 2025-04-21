@@ -15,7 +15,7 @@ def lower(tac: TACTable,debug=False):
     type_to_bytes = { "int": 4 }
 
     def prepare_prologue(fn: TACFn):
-        ids = fn.ids.values()
+        ids = fn.id_map.values()
         stack_size = 4 * len(ids) + 8 # 8 for link register
         contains_call = any([isinstance(tac,TACCall) for tac in fn.code])
         if contains_call: stack_size += 8
@@ -49,6 +49,8 @@ def lower(tac: TACTable,debug=False):
             res += f"{indent}mov {register},  #{immediate}{f"; ={immediate}"}\n"
 
         def comment(msg:str):
+            if msg == "b0 = a0":
+                pass
             nonlocal res
             res += f"\n{indent}// {msg}\n\n"
         
@@ -81,12 +83,12 @@ def lower(tac: TACTable,debug=False):
                             move("w8", const_val)
                             store("w8", tac.id)
                         case _: alu(ASSIGN_OPS[tac.op], tac.id, tac.value, tac.id)
-                case TACRef(id=ref_id):
+                case _:
                     match tac.op:
                         case "=":
-                            load("w8", ref_id)
+                            load("w8", tac.value)
                             store("w8", tac.id)
-                        case _: alu(ASSIGN_OPS[tac.op], ref_id, tac.id, tac.id)
+                        case _: alu(ASSIGN_OPS[tac.op], tac.value, tac.id, tac.id)
 
         res += f"  str lr, [sp, #-{stack_size}]!\n" # prepare stack and save link register for later
 
@@ -134,25 +136,24 @@ def lower(tac: TACTable,debug=False):
     return res.strip()
 
 if __name__ == "__main__":
-    code = """
+    code =\
+    """
     int main() {
-        int x = 1;
-        int i = 0;
-        while (i < 2) {
-            i += 1;
-            x *= 2;
-        }
-        return x;
+        int a = 1;
+        int b = 2;
+        b = a;
+        return b;
     }
     """
 
-    code = """
-    int main(){if(1!=1){return 1;}return 2;}
-    """
+    # code = """
+    # int main(){if(1!=1){return 1;}return 2;}
+    # """
 
     ast = list(Prs(code).parse())
     sem_res=sem.analyze(ast)
     t = to_tac(sem_res)
-    print(t.functions[0].code)
+    print(t)
+    # print(t.functions[0].code)
     asm = lower(t,True)
     print(asm)

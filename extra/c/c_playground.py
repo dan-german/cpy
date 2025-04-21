@@ -23,8 +23,10 @@ def run(code, output="a.out"):
 if __name__ == "__main__":
     code = r"""
     int main() {
-        int a = 2;
-        return a;
+        int a[4] = {2,3,7,9};
+        for (int i = 0; i < 4; i++) { 
+            a[i] = 5;
+        }
     }
     """
     # dump_ast(code)

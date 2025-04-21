@@ -54,7 +54,7 @@ class TestTac(unittest.TestCase):
         f2 = tac_table.functions[1]
         self.assertEqual(f2.args,[TACArg("int", "x1")])
         self.assertEqual(f2.code,[
-            TACCall("f1", [TACRef("x1")], "G0"),
+            TACCall("f1", ["x1"], "G0"),
             TACRet("G0")
         ])
 
@@ -75,7 +75,7 @@ class TestTac(unittest.TestCase):
         self.assertEqual(main.code, [
             TACAssign(id='x0', value=Const(value='0'), op='='), 
             TACAssign(id='x0', value=Const(value='2'), op='='),
-            TACAssign(id='y0', value=TACRef(id='x0'), op='='),
+            TACAssign(id='y0', value='x0', op='='),
             TACAssign(id='y0', value='x0', op='='),
             TACOp(id='G0', left='x0', op='+', right='y0'),
             TACRet(value='G0')

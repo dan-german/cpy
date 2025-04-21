@@ -180,8 +180,8 @@ if __name__ == "__main__":
             return x;
         }
         """
-    res = list(Prs(code).parse())
+    sem_res = list(Prs(code).parse())
     import dbg
-    dbg.pn(res)
+    dbg.pn(sem_res)
     
     # print(res)

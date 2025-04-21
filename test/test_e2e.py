@@ -165,6 +165,34 @@ class TestE2E(unittest.TestCase): # TODO - make fast
         }
         """
         self.assertEqual(int(debug(code)),256)
+    
+    def test_climbing_stairs(self):
+        def generate_code(n:int):
+            return f"""
+            int main() {{
+                int n = {n};
+                if (n <= 2) {{
+                    return n;
+                }}
+                int prev = 1;
+                int curr = 2;
+                int i = 2;
+                while (i < n) {{
+                    int temp = curr;
+                    curr = curr + prev;
+                    prev = temp;
+                    i += 1;
+                }}
+                return curr;
+            }}
+            """
+        self.assertEqual(int(debug(generate_code(1))),1)
+        self.assertEqual(int(debug(generate_code(2))),2)
+        self.assertEqual(int(debug(generate_code(3))),3)
+        self.assertEqual(int(debug(generate_code(4))),5)
+        self.assertEqual(int(debug(generate_code(5))),8)
+        self.assertEqual(int(debug(generate_code(6))),13)
+    
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)
