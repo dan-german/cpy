@@ -22,19 +22,17 @@ def run(code, output="a.out"):
 
 if __name__ == "__main__":
     code = r"""
-    int main() {
-        int a[4] = {2,3,7,9};
-        for (int i = 0; i < 4; i++) { 
-            a[i] = 5;
+        int main() { 
+            int a = 1;
+            int b = 2;
+            int result = a * b + a * b;
         }
-    }
     """
     # dump_ast(code)
     # run(code)
-    # dump_llvmir(code)
-    compile_asm(code)
+    dump_llvmir(code)
+    # compile_asm(code)
     # dump_pp(code)
-
 
 #             .section        __TEXT,__text,regular,pure_instructions
 #         .build_version macos, 15, 0     sdk_version 15, 2

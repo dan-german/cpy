@@ -166,22 +166,11 @@ class Prs:
 if __name__ == "__main__":
     code = """
         int main() { 
-            int x = 1;
-            int i = 0;
-            while (i < 2) { 
-                int j = 3;
-                x *= 2;
-                while (j != 0) { 
-                    x *= 2;
-                    j -= 1;
-                }
-                i+=1;
-            }
-            return x;
+            int a = 1;
+            int b = 2;
+            int result = a * b + a * b;
         }
         """
     sem_res = list(Prs(code).parse())
     import dbg
     dbg.pn(sem_res)
-    
-    # print(res)

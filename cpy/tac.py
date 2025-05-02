@@ -19,7 +19,7 @@ class TACFn:
 
 @dataclass 
 class TAC:
-    next_use: dict[int] = field(default_factory=dict, init=False)
+    next_use: dict[str,int] = field(default_factory=dict,init=False)
 
 @dataclass
 class TACJump(TAC):

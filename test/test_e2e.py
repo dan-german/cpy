@@ -192,7 +192,6 @@ class TestE2E(unittest.TestCase): # TODO - make fast
         self.assertEqual(int(debug(generate_code(4))),5)
         self.assertEqual(int(debug(generate_code(5))),8)
         self.assertEqual(int(debug(generate_code(6))),13)
-    
 
 if __name__ == "__main__":
   unittest.main(verbosity=1)
