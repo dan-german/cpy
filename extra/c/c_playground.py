@@ -22,16 +22,15 @@ def run(code, output="a.out"):
 
 if __name__ == "__main__":
     code = r"""
-        int main() { 
-            int a = 1;
-            int b = 2;
-            int result = a * b + a * b;
-        }
+    int f(int a) { 
+        a = 3;
+        return a;
+    }
     """
     # dump_ast(code)
     # run(code)
     dump_llvmir(code)
-    # compile_asm(code)
+    compile_asm(code)
     # dump_pp(code)
 
 #             .section        __TEXT,__text,regular,pure_instructions

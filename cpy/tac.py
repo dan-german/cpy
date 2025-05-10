@@ -10,12 +10,11 @@ class TACFn:
     args: list["TACArg"] = field(default_factory=list)
     code: list = field(default_factory=list)
     id_map: dict = field(default_factory=dict)
-    symbols: set = field(default_factory=set)
+    generated_symbols: set = field(default_factory=set)
     def get_id(self,id:str): return self.id_map[id]
     def __str__(self): return f"{self.id}: {[str(x) for x in self.args]}"
     def add_id(self,k,v):
         self.id_map[k] = v
-        self.symbols.add(v if type(k) == int else k)
 
 @dataclass 
 class TAC:
@@ -103,10 +102,12 @@ def to_tac(sem_result: sem.SemResult) -> TACTable:
     generated_var_counter = -1
     def get_symbol(node, scope: Scope): return (scope.find_var(node) or sem_result.global_vars[node.id]).id
 
-    def generate_id():
+    def generate_id(tac_fn:TACFn):
         nonlocal generated_var_counter
         generated_var_counter += 1
-        return f"G{generated_var_counter}" # G for generated
+        id = f"G{generated_var_counter}"
+        tac_fn.generated_symbols.add(id)
+        return id # G for generated
 
     def tac_id_for_node(tac_fn:TACFn,node, scope: Scope): 
         if isinstance(node,Ref): 
@@ -122,7 +123,7 @@ def to_tac(sem_result: sem.SemResult) -> TACTable:
         tac_fn.add_id(id(node),left)
 
     def bop(tac_fn:TACFn, node: BOp,scope:Scope):
-        new_tac_id = generate_id()
+        new_tac_id = generate_id(tac_fn)
         left = tac_id_for_node(tac_fn,node.left,scope)
         right = tac_id_for_node(tac_fn,node.right,scope)
         tac_fn.code.append(TACOp(new_tac_id, left, node.op, right))
@@ -137,18 +138,22 @@ def to_tac(sem_result: sem.SemResult) -> TACTable:
         tac_fn.code.append(TACAssign(new_tac_id, tac_ref, "="))
         tac_fn.add_id(node.id,new_tac_id)
 
+    def ret(tac_fn:TACFn,ret_value,scope:Scope): 
+        # print(ret_value)
+        # print(tac_fn.id_map)
+        ref = None
+        if (isinstance(ret_value, (BOp, Call))): ref = tac_fn.get_id(id(ret_value))
+        elif isinstance(ret_value, Const): ref = ret_value
+        else: ref = get_symbol(ret_value, scope)
+        tac_fn.code.append(TACRet(ref))
+
     def add_tac(tac_fn: TACFn, node, scope: Scope):
         match node:
             case BOp():
                 if node.op in ASSIGN_OPS: assign(tac_fn, node, scope)
                 else: bop(tac_fn, node,scope)
             case Var(): var(tac_fn,node,scope)
-            case Ret(value=ret_value):
-                ref = None
-                if (isinstance(ret_value, (BOp, Call))): ref = tac_fn.get_id(id(ret_value))
-                elif isinstance(ret_value, Const): ref = ret_value
-                else: ref = get_symbol(ret_value, scope)
-                tac_fn.code.append(TACRet(ref))
+            case Ret(value=ret_value): ret(tac_fn,ret_value,scope)
             case Call(id=fn_id, args=args):
                 arg_list = []
                 for arg in args:
@@ -161,11 +166,11 @@ def to_tac(sem_result: sem.SemResult) -> TACTable:
                         case _: raise Exception("unhandled")
                 if sem_result.functions[fn_id] == "void": tac_fn.code.append(TACCall(fn_id, arg_list, None))
                 else:
-                    new_tac_id = generate_id()
+                    new_tac_id = generate_id(tac_fn)
                     tac_fn.add_id(id(node),new_tac_id)
                     tac_fn.code.append(TACCall(fn_id, arg_list, new_tac_id))
 
-    def unwrap(tac_fn,node,scope): 
+    def unwrap(tac_fn:TACFn,node,scope:Scope): 
         for n in postorder(node): add_tac(tac_fn,n,scope)
 
     def if_(tac_fn:TACFn,node:If,scope:Scope):
@@ -219,4 +224,40 @@ def to_tac(sem_result: sem.SemResult) -> TACTable:
     for statement in sem_result.stmts:
         if isinstance(statement,Var): tac_globals.append(TACGlobal(statement.id,statement.value))
         elif isinstance(statement,Fn): tac_fns.append(add_fn(statement))
-    return TACTable(tac_fns,tac_globals)
+    res = TACTable(tac_fns,tac_globals)
+    for fn in res.functions: optimize_generated_assigns(fn)
+    return res
+
+def optimize_generated_assigns(fn:TACFn):
+    """
+    src:
+        0) G0 = Const(2) + Const(2)
+        1) a0 = G0
+        2) return a0
+    tgt:
+        0) a0 = Const(2) + Const(2)
+        1) return a0
+    """
+    for i in range(len(fn.code) -1, -1, -1):
+        stmt = fn.code[i]
+        if isinstance(stmt, TACOp) and stmt.id in fn.generated_symbols and isinstance(fn.code[i+1], TACAssign):
+            stmt.id = fn.code[i+1].id
+            del fn.code[i+1]
+
+if __name__ == "__main__": 
+    code =\
+    """
+    int f() { 
+        int a = 2;
+        a = 4*3+3;
+        return a;
+    }
+    """
+    from prs import *
+    from dbg import *
+    
+    statements = list(Prs(code).parse())
+    pn(statements)
+    sem_result = sem.analyze(statements)
+    tac_table = to_tac(sem_result)
+    print(tac_table)

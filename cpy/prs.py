@@ -110,9 +110,9 @@ class Prs:
             self.eat(value=";")
             return call
         elif self.peek() and self.peek().value in ASSIGN_OPS:
-            exp = self.expr(Ref(id))
+            bop = BOp(self.eat().value, Ref(id), self.expr())
             self.eat(value=";")
-            return exp
+            return bop
         ref=self.expr(Ref(id))
         self.eat(value=";")
         return ref
@@ -158,17 +158,15 @@ class Prs:
 
     def parse(self, terminal_value: str = None): 
         while self.peek() and self.peek().value != terminal_value: 
-            sp = self.peek().value
-            st = self.stmt()
-            yield st
+            yield self.stmt()
         if terminal_value: self.eat(value=terminal_value)
 
 if __name__ == "__main__":
     code = """
         int main() { 
-            int a = 1;
-            int b = 2;
-            int result = a * b + a * b;
+            int a;
+            a = 1*2+3;
+            return a;
         }
         """
     sem_res = list(Prs(code).parse())

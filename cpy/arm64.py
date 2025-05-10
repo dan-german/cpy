@@ -101,7 +101,6 @@ def lower(tac: TACTable,debug=False):
         applied_ret = False
         for tac in fn.code:
             comment(str(tac))
-            print(type(tac),"\n\n")
             match tac:
                 case TACLabel(label=label):
                     res += f"  {label}:"

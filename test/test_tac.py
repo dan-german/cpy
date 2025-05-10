@@ -19,11 +19,9 @@ class TestTac(unittest.TestCase):
         """
         self.assertEqual(self.to_tac(code).functions[0].code, [
             TACAssign(id='a0', value=Const(value='2'), op='='), 
-            TACOp(id='G0', left='a0', op='*', right='a0'), 
-            TACAssign(id='b0', value='G0', op='='), 
+            TACOp(id='b0', left='a0', op='*', right='a0'), 
             TACAssign(id='a0', value=Const(value='3'), op='='), 
-            TACOp(id='G1', left='b0', op='+', right='a0'), 
-            TACAssign(id='b0', value='G1', op='='), 
+            TACOp(id='b0', left='b0', op='+', right='a0'), 
             TACOp(id='G2', left='a0', op='+', right='b0'), 
             TACRet(value='G2')
         ])

@@ -85,7 +85,7 @@ class Scope:
     sym: dict = field(default_factory=dict,metadata={FieldMetadata.TRAVERSABLE:False})
     def __str__(self): return f"{self.__class__.__name__}([{",".join(str(x) for x in self.stmts)}])"
 
-    def find_var(self,ref:Ref): 
+    def find_var(self,ref:Ref) -> Symbol: 
         """
         Climb the scopes tree to find the ref's declaration
         """
