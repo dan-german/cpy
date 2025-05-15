@@ -50,7 +50,9 @@ print(debug(code))  # Outputs: 6
 ## Features  
 
 ✅ Functions  
-✅ Integer arithmetic  
-✅ If/else statements
-✅ While statements
-🔜 More features coming soon!  
+✅ `if/else` statements  
+✅ `while` statements  
+✅ Compound statements  
+✅ Declaration, scope & reference validation    
+✅ Tests for each step, including end-to-end program execution.    
+🔜 More soon!  
