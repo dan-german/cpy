@@ -54,5 +54,6 @@ print(debug(code))  # Outputs: 6
 ✅ `while` statements  
 ✅ Compound statements  
 ✅ Declaration, scope & reference validation    
+✅ Integer arithmetic    
 ✅ Tests for each step, including end-to-end program execution.    
 🔜 More soon!  
